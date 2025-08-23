@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from apps.core.models import BaseModel
 
-class Accounts(AbstractUser, BaseModel):
+class Account(AbstractUser, BaseModel):
     """
     Modelo de usuário customizado que estende o usuário padrão do Django.
 
