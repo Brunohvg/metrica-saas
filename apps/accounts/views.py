@@ -1,4 +1,4 @@
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, LogoutView
 from .forms import LoginForm
 from django.urls import reverse_lazy
 from django.contrib import messages
@@ -15,4 +15,14 @@ class CustomLoginView(LoginView):
         return super().form_invalid(form)
     
     def get_success_url(self):
-        return reverse_lazy('/')  # Redireciona para a página de login após o login bem-sucedido   
+        return reverse_lazy('dashboard:dashboard')  # Redireciona para a página de dashboard após o login bem-sucedido
+
+
+class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy('accounts:login') # Redireciona para a página de login após o logout
+
+    def dispatch(self, request, *args, **kwargs):
+        messages.success(request, 'Você saiu com sucesso.')
+        return super().dispatch(request, *args, **kwargs)
+    
+

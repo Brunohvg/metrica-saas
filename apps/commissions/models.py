@@ -1,7 +1,10 @@
 # apps/commissions/models.py
+from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from apps.core.models import BaseModel
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 class CommissionRule(BaseModel):
     """
@@ -31,8 +34,8 @@ class CommissionTier(BaseModel):
     Ex: Para vendas até R$ 1000,00, a comissão é de 5%.
     """
     rule = models.ForeignKey(CommissionRule, on_delete=models.CASCADE, related_name='tiers', verbose_name="Regra", help_text="A qual regra de comissão esta faixa pertence.")
-    limit_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Limite da Faixa", help_text="O valor máximo de vendas para aplicar este percentual.")
-    percentage = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Percentual (%)", help_text="A comissão a ser paga nesta faixa.")
+    limit_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Limite da Faixa", validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('99999999.99'))], help_text="O valor máximo de vendas para aplicar este percentual.")
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Percentual (%)", validators=[MinValueValidator(0), MaxValueValidator(100)], help_text="A comissão a ser paga nesta faixa.")
 
     def __str__(self):
         return f"Regra '{self.rule.name}': Até R$ {self.limit_value} -> {self.percentage}%"
@@ -50,11 +53,11 @@ class CommissionReport(BaseModel):
     class ReportStatus(models.TextChoices):
         PENDING = 'PENDING', 'Pendente'
         APPROVED = 'APPROVED', 'Aprovado'
-        PAID = 'PAID', 'Pago'
+        PAID = 'PAID', 'Pago'   
     
     seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='commission_reports', verbose_name="Vendedor")
-    period_year = models.PositiveIntegerField(verbose_name="Ano do Período")
-    period_month = models.PositiveIntegerField(verbose_name="Mês do Período")
+    period_year = models.PositiveIntegerField(verbose_name="Ano do Período", validators=[MinValueValidator(2025), MaxValueValidator(2100)])
+    period_month = models.PositiveIntegerField(verbose_name="Mês do Período", validators=[MinValueValidator(1), MaxValueValidator(12)])
     total_sales = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Vendas Totais no Período")
     commission_rule_applied = models.ForeignKey(CommissionRule, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Regra Aplicada")
     calculated_commission = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Comissão Calculada")
