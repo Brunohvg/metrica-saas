@@ -1,10 +1,11 @@
+# apps/commissions/models.py
 from decimal import Decimal
 from django.db import models
 from django.conf import settings
 from apps.core.models import BaseModel
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-# apps/commissions/models.py
+
 class CommissionRule(BaseModel):
     """
     Define uma regra de comissão que pode ser aplicada a vendedores.
@@ -15,31 +16,10 @@ class CommissionRule(BaseModel):
         TIERED = 'TIERED', 'Por Faixa'
         BONUS = 'BONUS', 'Bônus'
 
-    class BonusType(models.TextChoices):
-        PERCENTAGE = 'PERCENTAGE', 'Percentual'
-        FIXED = 'FIXED', 'Valor Fixo'
-
     name = models.CharField(max_length=100, unique=True, verbose_name="Nome da Regra")
     rule_type = models.CharField(max_length=10, choices=RuleType.choices, verbose_name="Tipo de Regra", help_text="Define como a comissão será calculada (fixa, por faixas, etc.).")
     description = models.TextField(blank=True, null=True, verbose_name="Descrição")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Criado Por", help_text="Usuário que criou a regra.")
-
-    # Campos específicos para FLAT
-    flat_percentage = models.DecimalField(
-        max_digits=5, decimal_places=2, blank=True, null=True,
-        verbose_name="Percentual Fixo (%)",
-        validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))],
-        help_text="Percentual aplicado para regras do tipo 'Valor Fixo'."
-    )
-    
-    # Campos específicos para BONUS
-    bonus_type = models.CharField(max_length=10, choices=BonusType.choices, blank=True, null=True, verbose_name="Tipo de Bônus", help_text="Define se o bônus é percentual ou valor fixo.")
-    bonus_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, blank=True, null=True,
-        verbose_name="Valor do Bônus",
-        validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Valor do bônus, que pode ser percentual ou fixo."
-    )
 
     def __str__(self):
         return self.name
@@ -51,20 +31,19 @@ class CommissionRule(BaseModel):
 class CommissionTier(BaseModel):
     """
     Define uma faixa (tier) para uma regra de comissão do tipo 'Por Faixa'.
-    Ex: Para vendas de R$ 0 a R$ 1000,00, a comissão é de 5%.
+    Ex: Para vendas até R$ 1000,00, a comissão é de 5%.
     """
     rule = models.ForeignKey(CommissionRule, on_delete=models.CASCADE, related_name='tiers', verbose_name="Regra", help_text="A qual regra de comissão esta faixa pertence.")
-    min_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Mínimo da Faixa", validators=[MinValueValidator(Decimal('0.00'))], help_text="O valor mínimo de vendas para aplicar este percentual.")
-    max_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Valor Máximo da Faixa", validators=[MinValueValidator(Decimal('0.00'))], help_text="O valor máximo de vendas para aplicar este percentual. Deixe em branco para a última faixa.")
-    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Percentual (%)", validators=[MinValueValidator(0), MaxValueValidator(100)], help_text="A comissão a ser paga nesta faixa.")
+    limit_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Valor Limite da Faixa", validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('99999999.99'))], help_text="O valor máximo de vendas para aplicar este percentual.")
+    percentage = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Percentual (%)", validators=[MinValueValidator(0), MaxValueValidator(100)], help_text="A comissão a ser paga nesta faixa.")
 
     def __str__(self):
-        return f"Regra '{self.rule.name}': R$ {self.min_amount} - R$ {self.max_amount or '∞'} -> {self.commission_rate}%"
+        return f"Regra '{self.rule.name}': Até R$ {self.limit_value} -> {self.percentage}%"
     
     class Meta:
         verbose_name = "Faixa de Comissão"
         verbose_name_plural = "Faixas de Comissão"
-        ordering = ['rule', 'min_amount']
+        ordering = ['rule', 'limit_value']
 
 class CommissionReport(BaseModel):
     """

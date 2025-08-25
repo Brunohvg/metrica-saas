@@ -1,205 +1,429 @@
 {% extends "base/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Regras de Comissão{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .table th { border-top: none; font-weight: 600; color: #6B7280; font-size: 0.875rem; letter-spacing: 0.025em; padding-top: 1rem; padding-bottom: 1rem; }
+    .table td { vertical-align: middle; }
+    .action-btn { width: 30px; height: 30px; border: 1px solid transparent; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    .action-btn:hover { transform: translateY(-1px); }
+    .form-control, .form-select { border: 1px solid #D1D5DB; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.875rem; }
+    .form-control:focus, .form-select:focus { border-color: #7FB6F0; box-shadow: 0 0 0 3px rgba(127, 182, 240, 0.25); }
+    .modal-content { border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .modal-header, .modal-footer { border: none; }
+
+    /* Cards compactos para regras */
+    .rule-card-compact {
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.15s ease;
+        margin-bottom: 0.5rem;
+    }
+
+    .rule-card-compact:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+        border-color: #7FB6F0;
+    }
+
+    .rule-type-badge {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        padding: 0.125rem 0.5rem;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .rule-type-FLAT { background-color: #E0F2FE; color: #0369A1; }
+    .rule-type-TIERED { background-color: #F0FDF4; color: #166534; }
+    .rule-type-BONUS { background-color: #FEF3C7; color: #92400E; }
+
+    .rule-icon {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: 600;
+        color: white;
+        font-size: 0.875rem;
+    }
+
+    .rule-icon-FLAT { background: linear-gradient(135deg, #0369A1 0%, #1E40AF 100%); }
+    .rule-icon-TIERED { background: linear-gradient(135deg, #166534 0%, #15803D 100%); }
+    .rule-icon-BONUS { background: linear-gradient(135deg, #92400E 0%, #B45309 100%); }
+
+    .filter-section {
+        background: #F8F9FA;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-check:checked + .btn-outline-primary {
+        background-color: #7FB6F0;
+        border-color: #7FB6F0;
+        color: white;
+    }
+
+    /* Estilos melhorados para o modal */
+    .modal-section {
+        background: #F8F9FA;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #7FB6F0;
+    }
+
+    .modal-section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .modal-section-title i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+        color: #7FB6F0;
+    }
+
+    .form-group-icon {
+        position: relative;
+    }
+
+    .form-group-icon .form-control,
+    .form-group-icon .form-select {
+        padding-left: 2.75rem;
+    }
+
+    .form-group-icon .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        z-index: 10;
+        font-size: 0.875rem;
+    }
+
+    .form-label-required::after {
+        content: " *";
+        color: #EF4444;
+        font-weight: 600;
+    }
+
+    .form-control.is-valid {
+        border-color: #10B981;
+    }
+
+    .form-control.is-invalid {
+        border-color: #EF4444;
+    }
+
+    .rule-config {
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-top: 1rem;
+        border-left: 4px solid #7FB6F0;
+    }
+
+    .tier-item {
+        background: #F8F9FA;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .tier-row {
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .tier-row:hover {
+        border-color: #7FB6F0;
+        box-shadow: 0 0 0 3px rgba(127, 182, 240, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .modal-dialog { margin: 1rem; }
+        .modal-section { padding: 1rem; margin-bottom: 1rem; }
+        .rule-card-compact { margin-bottom: 1rem; padding: 0.5rem; }
+        .filter-section .row { gap: 1rem; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+        .btn-group .btn { flex: 1; min-width: auto; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Commission Rules Manager Component -->
 <div class="container-fluid">
     <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-        <div class="card-header border-0 d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
-            <h5 class="card-title mb-0 fw-semibold">
+        <div class="card-header border-0 d-flex justify-content-between align-items-center"
+             style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+            <h5 class="card-title mb-0 fw-semibold" style="color:#0F172A;">
                 <i class="ti ti-gavel me-2"></i>Gerenciar Regras de Comissão
             </h5>
-            <button type="button" class="btn btn-light btn-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#createRuleModal" style="border-radius: 8px; font-weight: 500;">
+            <button class="btn btn-light btn-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#createRuleModal" style="border-radius: 8px; font-weight: 600; color:#0F172A; border:1px solid rgba(15,23,42,.08);">
                 <i class="ti ti-plus me-1"></i>Nova Regra
             </button>
         </div>
-        <div class="card-body" style="padding: 2rem;">
-            <!-- Rules List -->
-            <div class="table-responsive">
-                <!-- removed table-hover class for cleaner look -->
-                <table class="table table-borderless">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #e5e7eb;">
-                            <th class="border-0 fw-medium text-muted py-3" style="font-size: 0.875rem; letter-spacing: 0.025em;">Nome da Regra</th>
-                            <th class="border-0 fw-medium text-muted py-3" style="font-size: 0.875rem; letter-spacing: 0.025em;">Tipo</th>
-                            <th class="border-0 fw-medium text-muted py-3" style="font-size: 0.875rem; letter-spacing: 0.025em;">Descrição</th>
-                            <th class="border-0 fw-medium text-muted py-3" style="font-size: 0.875rem; letter-spacing: 0.025em;">Criado Por</th>
-                            <th class="border-0 fw-medium text-muted py-3" style="font-size: 0.875rem; letter-spacing: 0.025em;">Data Criação</th>
-                            <th class="border-0 fw-medium text-muted py-3" style="font-size: 0.875rem; letter-spacing: 0.025em;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rulesTableBody">
-                        {% for rule in commission_rules %}
-                        <tr style="border-bottom: 1px solid #f3f4f6;">
-                            <td class="py-4">
-                                <div class="fw-medium" style="color: #374151;">{{ rule.name }}</div>
-                            </td>
-                            <td class="py-4">
-                                <span class="badge px-3 py-2" style="
-                                    background-color: {% if rule.rule_type == 'FLAT' %}#dbeafe{% elif rule.rule_type == 'TIERED' %}#d1fae5{% else %}#fef3c7{% endif %}; 
-                                    color: {% if rule.rule_type == 'FLAT' %}#1e40af{% elif rule.rule_type == 'TIERED' %}#065f46{% else %}#92400e{% endif %}; 
-                                    border: 1px solid {% if rule.rule_type == 'FLAT' %}#bfdbfe{% elif rule.rule_type == 'TIERED' %}#a7f3d0{% else %}#fde68a{% endif %};
-                                    border-radius: 6px;
-                                    font-weight: 500;
-                                    font-size: 0.75rem;
-                                ">
-                                    {{ rule.get_rule_type_display }}
-                                </span>
-                            </td>
-                            <td class="py-4">
-                                <span style="color: #6b7280; font-size: 0.875rem;">{{ rule.description|truncatechars:50 }}</span>
-                            </td>
-                            <td class="py-4" style="color: #6b7280; font-size: 0.875rem;">{{ rule.created_by.username|default:"Sistema" }}</td>
-                            <td class="py-4" style="color: #6b7280; font-size: 0.875rem;">{{ rule.created_at|date:"d/m/Y H:i" }}</td>
-                            <td class="py-4">
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-sm" onclick="viewRule({{ rule.id }})" title="Visualizar" style="background-color: #f0f9ff; color: #0891b2; border: 1px solid #e0f2fe; border-radius: 6px; padding: 0.375rem 0.75rem;">
-                                        <i class="ti ti-eye"></i>
+        
+        <div class="card-body">
+            <!-- Filtros e Busca -->
+            <div class="filter-section">
+                <div class="row align-items-center g-3">
+                    <div class="col-lg-8 col-md-12">
+                        <label class="form-label fw-medium mb-2">Filtrar por tipo:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="filterType" id="filterAll" value="all" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="filterAll">
+                                <i class="ti ti-list me-1"></i>Todas (<span id="countAll">0</span>)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="filterType" id="filterFlat" value="FLAT">
+                            <label class="btn btn-outline-primary btn-sm" for="filterFlat">
+                                <i class="ti ti-hash me-1"></i>Valor Fixo (<span id="countFlat">0</span>)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="filterType" id="filterTiered" value="TIERED">
+                            <label class="btn btn-outline-primary btn-sm" for="filterTiered">
+                                <i class="ti ti-layers-intersect me-1"></i>Por Faixas (<span id="countTiered">0</span>)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="filterType" id="filterBonus" value="BONUS">
+                            <label class="btn btn-outline-primary btn-sm" for="filterBonus">
+                                <i class="ti ti-gift me-1"></i>Bônus (<span id="countBonus">0</span>)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-12">
+                        <label class="form-label fw-medium mb-2">Buscar regra:</label>
+                        <input type="text" class="form-control" id="searchRules" placeholder="Digite nome da regra...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista Compacta de Regras -->
+            <div id="rulesCompactList">
+                {% for rule in commission_rules %}
+                <div class="rule-card-compact rule-item" 
+                     data-rule-type="{{ rule.rule_type }}"
+                     data-rule-name="{{ rule.name|lower }}"
+                     data-rule-desc="{{ rule.description|lower }}">
+                    <div class="d-flex align-items-start">
+                        <div class="rule-icon rule-icon-{{ rule.rule_type }} me-3">
+                            {% if rule.rule_type == 'FLAT' %}
+                                <i class="ti ti-hash"></i>
+                            {% elif rule.rule_type == 'TIERED' %}
+                                <i class="ti ti-layers-intersect"></i>
+                            {% else %}
+                                <i class="ti ti-gift"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-start justify-content-between">
+                                <div class="flex-grow-1 me-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 fw-semibold" style="color: #1F2937;">{{ rule.name }}</h6>
+                                        <span class="rule-type-badge rule-type-{{ rule.rule_type }} ms-2">
+                                            {{ rule.get_rule_type_display }}
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-muted mb-2" style="font-size: 0.875rem; line-height: 1.4;">
+                                        {{ rule.description|truncatechars:100|default:"Sem descrição" }}
+                                    </p>
+                                    
+                                    <div class="d-flex align-items-center gap-3 text-muted" style="font-size: 0.75rem;">
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-user me-1"></i>
+                                            <span>{{ rule.created_by.username|default:"Sistema" }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-calendar me-1"></i>
+                                            <span>{{ rule.created_at|date:"d/m/Y H:i" }}</span>
+                                        </div>
+                                        {% if rule.rule_type == 'FLAT' and rule.flat_percentage %}
+                                        <div class="d-flex align-items-center">
+                                            <i class="ti ti-percentage me-1"></i>
+                                            <span>{{ rule.flat_percentage }}%</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="action-btn" onclick="viewRule({{ rule.id }})" title="Visualizar" style="background-color: #E0F2FE; color: #0369A1;">
+                                        <i class="ti ti-eye" style="font-size: 0.875rem;"></i>
                                     </button>
-                                    <button type="button" class="btn btn-sm" onclick="editRule({{ rule.id }})" title="Editar" style="background-color: #fffbeb; color: #d97706; border: 1px solid #fef3c7; border-radius: 6px; padding: 0.375rem 0.75rem;">
-                                        <i class="ti ti-edit"></i>
+                                    <button type="button" class="action-btn" onclick="editRule({{ rule.id }})" title="Editar" style="background-color: #FEF3C7; color: #92400E;">
+                                        <i class="ti ti-edit" style="font-size: 0.875rem;"></i>
                                     </button>
                                     {% if rule.rule_type == 'TIERED' %}
-                                    <button type="button" class="btn btn-sm" onclick="manageTiers({{ rule.id }})" title="Gerenciar Faixas" style="background-color: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; border-radius: 6px; padding: 0.375rem 0.75rem;">
-                                        <i class="ti ti-layers-intersect"></i>
+                                    <button type="button" class="action-btn" onclick="manageTiers({{ rule.id }})" title="Gerenciar Faixas" style="background-color: #F0FDF4; color: #166534;">
+                                        <i class="ti ti-layers-intersect" style="font-size: 0.875rem;"></i>
                                     </button>
                                     {% endif %}
-                                    <button type="button" class="btn btn-sm" onclick="deleteRule({{ rule.id }})" title="Excluir" style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; padding: 0.375rem 0.75rem;">
-                                        <i class="ti ti-trash"></i>
+                                    <button type="button" class="action-btn" onclick="deleteRule({{ rule.id }})" title="Excluir" style="background-color: #FEE2E2; color: #DC2626;">
+                                        <i class="ti ti-trash" style="font-size: 0.875rem;"></i>
                                     </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <div class="empty-state">
-                                    <i class="ti ti-inbox display-4 mb-3" style="color: #d1d5db;"></i>
-                                    <h6 style="color: #6b7280; font-weight: 500;">Nenhuma regra de comissão cadastrada</h6>
-                                    <p style="color: #9ca3af; font-size: 0.875rem;">Clique em "Nova Regra" para começar</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Create/Edit Rule Modal -->
-<!-- Enhanced modal design with better styling and spacing -->
-<div class="modal fade" id="createRuleModal" tabindex="-1" aria-labelledby="createRuleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0" style="border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <div class="modal-header border-0" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
-                <h5 class="modal-title fw-semibold" id="createRuleModalLabel">
-                    <i class="ti ti-plus me-2"></i>Nova Regra de Comissão
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="ruleForm" method="post">
-                {% csrf_token %}
-                <div class="modal-body" style="padding: 2rem;">
-                    <div class="row g-4">
-                        <div class="col-md-8">
-                            <div class="mb-3">
-                                <label for="ruleName" class="form-label fw-medium mb-2" style="color: #374151;">Nome da Regra <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="ruleName" name="name" required maxlength="100" placeholder="Ex: Comissão Padrão 5%" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem;">
-                                <div class="form-text" style="color: #6b7280; font-size: 0.75rem; margin-top: 0.5rem;">
-                                    <i class="ti ti-info-circle me-1"></i>
-                                    Escolha um nome descritivo para identificar facilmente esta regra
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="ruleType" class="form-label fw-medium mb-2" style="color: #374151;">Tipo de Regra <span class="text-danger">*</span></label>
-                                <select class="form-select" id="ruleType" name="rule_type" required onchange="toggleRuleTypeFields()" style="border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem;">
-                                    <option value="">Selecione...</option>
-                                    <option value="FLAT">Valor Fixo</option>
-                                    <option value="TIERED">Por Faixa</option>
-                                    <option value="BONUS">Bônus</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="ruleDescription" class="form-label fw-medium mb-2" style="color: #374151;">Descrição</label>
-                        <textarea class="form-control" id="ruleDescription" name="description" rows="3" placeholder="Descreva como esta regra funciona e quando deve ser aplicada..." style="border: 1px solid #d1d5db; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.875rem;"></textarea>
-                    </div>
-
-                    <!-- Flat Rate Configuration -->
-                    <div id="flatRateConfig" class="rule-config d-none">
-                        <div class="alert border-0 mb-4" style="background-color: #f0f9ff; border-radius: 12px; padding: 1rem;">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-info-circle fs-5 me-3" style="color: #0891b2;"></i>
-                                <div>
-                                    <h6 class="mb-1 fw-medium" style="color: #0891b2;">Valor Fixo</h6>
-                                    <p class="mb-0" style="color: #0e7490; font-size: 0.875rem;">Uma porcentagem fixa será aplicada sobre todas as vendas.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label for="flatPercentage" class="form-label fw-medium mb-2" style="color: #374151;">Percentual de Comissão (%)</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control" id="flatPercentage" name="flat_percentage" min="0" max="100" step="0.01" placeholder="5.00" style="border: 1px solid #d1d5db; border-radius: 8px 0 0 8px; padding: 0.75rem 1rem; font-size: 0.875rem;">
-                                    <span class="input-group-text" style="background-color: #0891b2; color: white; border: 1px solid #0891b2; border-radius: 0 8px 8px 0;">%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tiered Configuration -->
-                    <div id="tieredConfig" class="rule-config d-none">
-                        <div class="alert border-0 mb-4" style="background-color: #f0fdf4; border-radius: 12px; padding: 1rem;">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-layers-intersect fs-5 me-3" style="color: #16a34a;"></i>
-                                <div>
-                                    <h6 class="mb-1 fw-medium" style="color: #16a34a;">Por Faixa</h6>
-                                    <p class="mb-0" style="color: #15803d; font-size: 0.875rem;">Diferentes percentuais para diferentes faixas de vendas. Configure as faixas após criar a regra.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bonus Configuration -->
-                    <div id="bonusConfig" class="rule-config d-none">
-                        <div class="alert border-0 mb-4" style="background-color: #fffbeb; border-radius: 12px; padding: 1rem;">
-                            <div class="d-flex align-items-center">
-                                <i class="ti ti-gift fs-5 me-3" style="color: #d97706;"></i>
-                                <div>
-                                    <h6 class="mb-1 fw-medium" style="color: #d97706;">Bônus</h6>
-                                    <p class="mb-0" style="color: #b45309; font-size: 0.875rem;">Valor adicional baseado em metas ou critérios específicos.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label for="bonusAmount" class="form-label fw-medium mb-2" style="color: #374151;">Valor do Bônus (R$)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text" style="background-color: #d97706; color: white; border: 1px solid #d97706; border-radius: 8px 0 0 8px;">R$</span>
-                                    <input type="number" class="form-control" id="bonusAmount" name="bonus_amount" min="0" step="0.01" placeholder="500.00" style="border: 1px solid #d1d5db; border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; font-size: 0.875rem;">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="bonusThreshold" class="form-label fw-medium mb-2" style="color: #374151;">Meta Mínima (R$)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text" style="background-color: #d97706; color: white; border: 1px solid #d97706; border-radius: 8px 0 0 8px;">R$</span>
-                                    <input type="number" class="form-control" id="bonusThreshold" name="bonus_threshold" min="0" step="0.01" placeholder="10000.00" style="border: 1px solid #d1d5db; border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; font-size: 0.875rem;">
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0" style="background-color: #f9fafb; border-radius: 0 0 16px 16px; padding: 1.5rem 2rem;">
-                    <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal" style="background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500;">
+                {% empty %}
+                <div class="text-center p-5" id="emptyState">
+                    <i class="ti ti-inbox display-4 mb-3" style="color: #D1D5DB;"></i>
+                    <h6 style="color: #6B7280; font-weight: 600;">Nenhuma regra de comissão cadastrada</h6>
+                    <p style="color: #9CA3AF; font-size: 0.875rem;">Clique em "Nova Regra" para começar</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Melhorado -->
+<div class="modal fade" id="createRuleModal" tabindex="-1" aria-labelledby="createRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header" style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+                <h5 class="modal-title fw-semibold d-flex align-items-center" id="createRuleModalLabel">
+                    <i class="ti ti-plus me-2"></i>Nova Regra de Comissão
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form id="ruleForm" novalidate method="post">
+                {% csrf_token %}
+                <div class="modal-body" style="padding: 2rem;">
+                    
+                    <!-- Seção: Dados da Regra -->
+                    <div class="modal-section">
+                        <h6 class="modal-section-title">
+                            <i class="ti ti-info-circle"></i>Dados da Regra
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-medium form-label-required">Nome da Regra</label>
+                                <div class="form-group-icon">
+                                    <i class="ti ti-gavel input-icon"></i>
+                                    <input type="text" id="ruleName" name="name" class="form-control" required maxlength="100" placeholder="Ex: Comissão Padrão 5%">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium form-label-required">Tipo de Regra</label>
+                                <div class="form-group-icon">
+                                    <i class="ti ti-category input-icon"></i>
+                                    <select class="form-select" id="ruleType" name="rule_type" required onchange="toggleRuleTypeFields()">
+                                        <option value="">Selecione...</option>
+                                        <option value="FLAT">Valor Fixo</option>
+                                        <option value="TIERED">Por Faixa</option>
+                                        <option value="BONUS">Bônus</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Descrição</label>
+                                <div class="form-group-icon">
+                                    <i class="ti ti-file-text input-icon"></i>
+                                    <textarea class="form-control" id="ruleDescription" name="description" rows="3" placeholder="Descreva como esta regra funciona e quando deve ser aplicada..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Configuração Específica -->
+                    <div id="ruleConfigSection" class="d-none">
+                        <!-- Flat Rate Configuration -->
+                        <div id="flatRateConfig" class="rule-config d-none">
+                            <h6 class="modal-section-title">
+                                <i class="ti ti-hash"></i>Configuração - Valor Fixo
+                            </h6>
+                            <div class="alert alert-info border-0" style="background-color: #E0F2FE; color: #0369A1;">
+                                <i class="ti ti-info-circle me-2"></i>
+                                Uma porcentagem fixa será aplicada sobre todas as vendas.
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium form-label-required">Percentual de Comissão (%)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background-color: #7FB6F0; color: white; border-color: #7FB6F0;">%</span>
+                                        <input type="number" class="form-control" id="flatPercentage" name="flat_percentage" min="0" max="100" step="0.01" placeholder="5.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tiered Configuration -->
+                        <div id="tieredConfig" class="rule-config d-none">
+                            <h6 class="modal-section-title">
+                                <i class="ti ti-layers-intersect"></i>Configuração - Por Faixa
+                            </h6>
+                            <div class="alert alert-success border-0" style="background-color: #F0FDF4; color: #166534;">
+                                <i class="ti ti-info-circle me-2"></i>
+                                Diferentes percentuais para diferentes faixas de vendas. Configure as faixas após criar a regra.
+                            </div>
+                        </div>
+
+                        <!-- Bonus Configuration -->
+                        <div id="bonusConfig" class="rule-config d-none">
+                            <h6 class="modal-section-title">
+                                <i class="ti ti-gift"></i>Configuração - Bônus
+                            </h6>
+                            <div class="alert alert-warning border-0" style="background-color: #FEF3C7; color: #92400E;">
+                                <i class="ti ti-info-circle me-2"></i>
+                                Um valor adicional ou percentual aplicado como bônus sobre as vendas.
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium">Tipo de Bônus</label>
+                                    <div class="form-group-icon">
+                                        <i class="ti ti-category input-icon"></i>
+                                        <select class="form-select" id="bonusType" name="bonus_type">
+                                            <option value="PERCENTAGE">Percentual</option>
+                                            <option value="FIXED">Valor Fixo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-medium">Valor do Bônus</label>
+                                    <div class="form-group-icon">
+                                        <i class="ti ti-currency-dollar input-icon"></i>
+                                        <input type="number" class="form-control" id="bonusAmount" name="bonus_amount" min="0" step="0.01" placeholder="100.00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer" style="padding: 1.5rem 2rem;">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: 8px;">
                         <i class="ti ti-x me-1"></i>Cancelar
                     </button>
-                    <button type="submit" class="btn px-4 py-2" style="background-color: #0891b2; color: white; border: 1px solid #0891b2; border-radius: 8px; font-weight: 500;">
-                        <i class="ti ti-device-floppy me-1"></i>Salvar Regra
+                    <button type="submit" class="btn px-4 py-2" style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border: none; border-radius: 8px; font-weight: 600;">
+                        <i class="ti ti-check me-1"></i>Salvar Regra
                     </button>
                 </div>
             </form>
@@ -207,413 +431,682 @@
     </div>
 </div>
 
-<!-- Manage Tiers Modal -->
-<!-- Enhanced tiers modal with better layout and styling -->
-<div class="modal fade" id="manageTiersModal" tabindex="-1" aria-labelledby="manageTiersModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0" style="border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <div class="modal-header border-0" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
-                <h5 class="modal-title fw-semibold" id="manageTiersModalLabel">
-                    <i class="ti ti-layers-intersect me-2"></i>Gerenciar Faixas de Comissão
+<!-- View Rule Modal -->
+<div class="modal fade" id="viewRuleModal" tabindex="-1" aria-labelledby="viewRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header" style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+                <h5 class="modal-title fw-semibold d-flex align-items-center">
+                    <i class="ti ti-eye me-2"></i>Detalhes da Regra
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding: 2rem;">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h6 class="mb-1 fw-medium">Faixas para: <span id="tierRuleName" style="color: #0891b2;"></span></h6>
-                        <p class="mb-0" style="color: #6b7280; font-size: 0.875rem;">Configure os percentuais para cada faixa de vendas</p>
-                    </div>
-                    <button type="button" class="btn px-3 py-2" onclick="addTier()" style="background-color: #16a34a; color: white; border: 1px solid #16a34a; border-radius: 8px; font-weight: 500;">
+                <div id="viewRuleContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Rule Modal -->
+<div class="modal fade" id="editRuleModal" tabindex="-1" aria-labelledby="editRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header" style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+                <h5 class="modal-title fw-semibold d-flex align-items-center">
+                    <i class="ti ti-edit me-2"></i>Editar Regra
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <form id="editRuleForm" novalidate>
+                    {% csrf_token %}
+                    <div id="editRuleContent"></div>
+                </form>
+            </div>
+            <div class="modal-footer" style="padding: 1.5rem 2rem;">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: 8px;">Cancelar</button>
+                <button type="button" class="btn px-4 py-2" onclick="saveEditRule()" style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border: none; border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-check me-1"></i>Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tiers Management Modal -->
+<div class="modal fade" id="tiersModal" tabindex="-1" aria-labelledby="tiersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header" style="background: linear-gradient(135deg, #16A34A 0%, #15803D 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+                <h5 class="modal-title fw-semibold d-flex align-items-center">
+                    <i class="ti ti-layers-intersect me-2"></i>Gerenciar Faixas de Comissão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div class="mb-3">
+                    <button type="button" class="btn btn-success btn-sm px-3 py-2" onclick="addTier()" style="border-radius: 8px; font-weight: 600;">
                         <i class="ti ti-plus me-1"></i>Adicionar Faixa
                     </button>
                 </div>
-                
-                <div class="alert border-0 mb-4" style="background-color: #f0f9ff; border-radius: 12px; padding: 1rem;">
-                    <div class="d-flex align-items-start">
-                        <i class="ti ti-info-circle fs-5 me-3 mt-1" style="color: #0891b2;"></i>
-                        <div>
-                            <h6 class="mb-1 fw-medium" style="color: #0891b2;">Como funciona</h6>
-                            <p class="mb-0" style="color: #0e7490; font-size: 0.875rem;">As faixas são aplicadas em ordem crescente. Exemplo: 0-1000 (5%), 1001-5000 (7%), 5001+ (10%)</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tiersContainer" class="tiers-container">
-                    <!-- Tiers will be loaded here -->
-                </div>
+                <div id="tiersContent"></div>
             </div>
-            <div class="modal-footer border-0" style="background-color: #f9fafb; border-radius: 0 0 16px 16px; padding: 1.5rem 2rem;">
-                <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal" style="background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500;">
-                    <i class="ti ti-x me-1"></i>Fechar
-                </button>
-                <button type="button" class="btn px-4 py-2" onclick="saveTiers()" style="background-color: #16a34a; color: white; border: 1px solid #16a34a; border-radius: 8px; font-weight: 500;">
-                    <i class="ti ti-device-floppy me-1"></i>Salvar Faixas
+            <div class="modal-footer" style="padding: 1.5rem 2rem;">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2" data-bs-dismiss="modal" style="border-radius: 8px;">Cancelar</button>
+                <button type="button" class="btn btn-success px-4 py-2" onclick="saveTiers()" style="border-radius: 8px; font-weight: 600;">
+                    <i class="ti ti-check me-1"></i>Salvar Faixas
                 </button>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- View Rule Details Modal -->
-<!-- Enhanced details modal with better information layout -->
-<div class="modal fade" id="viewRuleModal" tabindex="-1" aria-labelledby="viewRuleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0" style="border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
-            <div class="modal-header border-0" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
-                <h5 class="modal-title fw-semibold" id="viewRuleModalLabel">
-                    <i class="ti ti-eye me-2"></i>Detalhes da Regra
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" style="padding: 2rem;" id="ruleDetailsContent">
-                <!-- Rule details will be loaded here -->
-            </div>
-            <div class="modal-footer border-0" style="background-color: #f9fafb; border-radius: 0 0 16px 16px; padding: 1.5rem 2rem;">
-                <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal" style="background-color: #f3f4f6; color: #374151; border: 1px solid #d1d5db; border-radius: 8px; font-weight: 500;">
-                    <i class="ti ti-x me-1"></i>Fechar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
+{% block extra_js %}
 <script>
-// Global variables
-let currentRuleId = null;
-let tiersData = [];
+    // Variáveis globais
+    let currentRuleData = null; // Armazena todos os dados da regra atual para salvar as faixas
 
-// Toggle rule type specific fields
-function toggleRuleTypeFields() {
-    const ruleType = document.getElementById('ruleType').value;
-    const configs = document.querySelectorAll('.rule-config');
-    
-    configs.forEach(config => config.classList.add('d-none'));
-    
-    if (ruleType === 'FLAT') {
-        document.getElementById('flatRateConfig').classList.remove('d-none');
-    } else if (ruleType === 'TIERED') {
-        document.getElementById('tieredConfig').classList.remove('d-none');
-    } else if (ruleType === 'BONUS') {
-        document.getElementById('bonusConfig').classList.remove('d-none');
+    // Função para obter o token CSRF
+    function getCSRFToken() {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        return csrfInput ? csrfInput.value : '';
     }
-}
 
-// View rule details
-function viewRule(ruleId) {
-    fetch(`/api/v1/commissions/rules/${ruleId}/`)
-        .then(response => response.json())
-        .then(data => {
-            let content = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Informações Básicas</h6>
-                        <table class="table table-sm">
-                            <tr><td><strong>Nome:</strong></td><td>${data.name}</td></tr>
-                            <tr><td><strong>Tipo:</strong></td><td><span class="badge bg-primary">${data.rule_type_display}</span></td></tr>
-                            <tr><td><strong>Criado por:</strong></td><td>${data.created_by || 'Sistema'}</td></tr>
-                            <tr><td><strong>Data:</strong></td><td>${data.created_at}</td></tr>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Descrição</h6>
-                        <p class="text-muted">${data.description || 'Sem descrição'}</p>
+    // Função auxiliar para exibir alertas de sucesso com temporizador
+    function showSuccessAlert(message) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Sucesso!',
+            text: message,
+            timer: 2500, // 2.5 segundos
+            showConfirmButton: false
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        updateCounts();
+        setupFilters();
+        setupSearch();
+
+        const ruleForm = document.getElementById('ruleForm');
+        if (ruleForm) {
+            ruleForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                submitRuleForm();
+            });
+        }
+    });
+
+    // Função para alternar campos do tipo de regra
+    function toggleRuleTypeFields() {
+        const ruleType = document.getElementById('ruleType').value;
+        const ruleConfigSection = document.getElementById('ruleConfigSection');
+        const configs = document.querySelectorAll('.rule-config');
+
+        if (ruleType) {
+            ruleConfigSection.classList.remove('d-none');
+        } else {
+            ruleConfigSection.classList.add('d-none');
+        }
+
+        configs.forEach(config => config.classList.add('d-none'));
+
+        if (ruleType === 'FLAT') {
+            document.getElementById('flatRateConfig').classList.remove('d-none');
+        } else if (ruleType === 'TIERED') {
+            document.getElementById('tieredConfig').classList.remove('d-none');
+        } else if (ruleType === 'BONUS') {
+            document.getElementById('bonusConfig').classList.remove('d-none');
+        }
+    }
+
+    // Função para enviar o formulário de criação
+    function submitRuleForm() {
+        const form = document.getElementById('ruleForm');
+        const formData = new FormData(form);
+
+        const data = {
+            name: formData.get('name'),
+            rule_type: formData.get('rule_type'),
+            description: formData.get('description'),
+        };
+
+        const ruleType = data.rule_type;
+        if (ruleType === 'FLAT') {
+            data.flat_percentage = parseFloat(formData.get('flat_percentage')) || null;
+        } else if (ruleType === 'BONUS') {
+            data.bonus_type = formData.get('bonus_type');
+            data.bonus_amount = parseFloat(formData.get('bonus_amount')) || null;
+        }
+
+        fetch(`/api/v1/commissions/rules/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                showSuccessAlert('Regra criada com sucesso.');
+                bootstrap.Modal.getInstance(document.getElementById('createRuleModal')).hide();
+                setTimeout(() => {
+                    location.reload();
+                }, 2500);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                const errorMessage = error.name ? Object.values(error).map(val => val[0]).join('<br>') : 'Não foi possível criar a regra.';
+                Swal.fire('Erro!', errorMessage, 'error');
+            });
+    }
+
+    // Função para visualizar regra
+    function viewRule(ruleId) {
+        fetch(`/api/v1/commissions/rules/${ruleId}/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const ruleTypeDisplay = {
+                    'FLAT': 'Valor Fixo',
+                    'TIERED': 'Por Faixa',
+                    'BONUS': 'Bônus'
+                };
+
+                let specificContent = '';
+                if (data.rule_type === 'FLAT' && data.flat_percentage) {
+                    specificContent = `<div class="col-12"><strong>Percentual Fixo:</strong><br><span class="text-muted">${data.flat_percentage}%</span></div>`;
+                } else if (data.rule_type === 'BONUS' && data.bonus_amount) {
+                    specificContent = `
+                        <div class="col-md-6">
+                            <strong>Tipo de Bônus:</strong><br>
+                            <span class="text-muted">${data.bonus_type === 'FIXED' ? 'Valor Fixo' : 'Percentual'}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Valor do Bônus:</strong><br>
+                            <span class="text-muted">${data.bonus_amount}</span>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('viewRuleContent').innerHTML = `
+                <div class="modal-section">
+                    <h6 class="modal-section-title">
+                        <i class="ti ti-info-circle"></i>Informações da Regra
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <strong>Nome:</strong><br>
+                            <span class="text-muted">${data.name}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Tipo:</strong><br>
+                            <span class="rule-type-badge rule-type-${data.rule_type}">${ruleTypeDisplay[data.rule_type] || data.rule_type}</span>
+                        </div>
+                        <div class="col-12">
+                            <strong>Descrição:</strong><br>
+                            <span class="text-muted">${data.description || 'Sem descrição'}</span>
+                        </div>
+                        ${specificContent}
+                        <div class="col-md-6">
+                            <strong>Criado por:</strong><br>
+                            <span class="text-muted">${data.created_by || 'Sistema'}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Data de criação:</strong><br>
+                            <span class="text-muted">${new Date(data.created_at).toLocaleString('pt-BR')}</span>
+                        </div>
                     </div>
                 </div>
             `;
-            
-            if (data.rule_type === 'TIERED' && data.tiers && data.tiers.length > 0) {
-                content += `
-                    <hr>
-                    <h6>Faixas de Comissão</h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead><tr><th>Até (R$)</th><th>Percentual (%)</th></tr></thead>
-                            <tbody>
-                `;
-                data.tiers.forEach(tier => {
-                    content += `<tr><td>R$ ${tier.limit_value}</td><td>${tier.percentage}%</td></tr>`;
-                });
-                content += `</tbody></table></div>`;
-            }
-            
-            document.getElementById('ruleDetailsContent').innerHTML = content;
-            new bootstrap.Modal(document.getElementById('viewRuleModal')).show();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Erro ao carregar detalhes da regra');
-        });
-}
+                new bootstrap.Modal(document.getElementById('viewRuleModal')).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire('Erro!', 'Não foi possível carregar os detalhes da regra.', 'error');
+            });
+    }
 
-// Edit rule
-function editRule(ruleId) {
-    fetch(`/api/v1/commissions/rules/${ruleId}/`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('createRuleModalLabel').innerHTML = '<i class="ti ti-edit me-2"></i>Editar Regra de Comissão';
-            document.getElementById('ruleName').value = data.name;
-            document.getElementById('ruleType').value = data.rule_type;
-            document.getElementById('ruleDescription').value = data.description || '';
-            
-            currentRuleId = ruleId;
-            toggleRuleTypeFields();
-            
-            new bootstrap.Modal(document.getElementById('createRuleModal')).show();
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Erro ao carregar dados da regra');
-        });
-}
-
-// Delete rule
-function deleteRule(ruleId) {
-    if (confirm('Tem certeza que deseja excluir esta regra? Esta ação não pode ser desfeita.')) {
+    // Função para editar regra
+    function editRule(ruleId) {
         fetch(`/api/v1/commissions/rules/${ruleId}/`, {
-            method: 'DELETE',
+            method: 'GET',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Erro ao excluir regra');
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Erro ao excluir regra');
-        });
-    }
-}
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                let specificFields = '';
+                if (data.rule_type === 'FLAT') {
+                    specificFields = `
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium form-label-required">Percentual de Comissão (%)</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background-color: #7FB6F0; color: white; border-color: #7FB6F0;">%</span>
+                            <input type="number" class="form-control" name="flat_percentage" value="${data.flat_percentage || ''}" min="0" max="100" step="0.01" placeholder="5.00">
+                        </div>
+                    </div>
+                `;
+                } else if (data.rule_type === 'BONUS') {
+                    specificFields = `
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Tipo de Bônus</label>
+                        <div class="form-group-icon">
+                            <i class="ti ti-category input-icon"></i>
+                            <select class="form-select" name="bonus_type">
+                                <option value="PERCENTAGE" ${data.bonus_type === 'PERCENTAGE' ? 'selected' : ''}>Percentual</option>
+                                <option value="FIXED" ${data.bonus_type === 'FIXED' ? 'selected' : ''}>Valor Fixo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Valor do Bônus</label>
+                        <div class="form-group-icon">
+                            <i class="ti ti-currency-dollar input-icon"></i>
+                            <input type="number" class="form-control" name="bonus_amount" value="${data.bonus_amount || ''}" min="0" step="0.01" placeholder="100.00">
+                        </div>
+                    </div>
+                `;
+                }
 
-// Manage tiers
-function manageTiers(ruleId) {
-    currentRuleId = ruleId;
-    
-    fetch(`/api/v1/commissions/rules/${ruleId}/tiers/`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('tierRuleName').textContent = data.rule_name;
-            tiersData = data.tiers || [];
-            renderTiers();
-            new bootstrap.Modal(document.getElementById('manageTiersModal')).show();
+                document.getElementById('editRuleContent').innerHTML = `
+                <input type="hidden" name="rule_id" value="${ruleId}">
+                <div class="modal-section">
+                    <h6 class="modal-section-title">
+                        <i class="ti ti-edit"></i>Editar Informações
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-medium form-label-required">Nome da Regra</label>
+                            <div class="form-group-icon">
+                                <i class="ti ti-gavel input-icon"></i>
+                                <input type="text" class="form-control" name="name" value="${data.name}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium form-label-required">Tipo de Regra</label>
+                            <div class="form-group-icon">
+                                <i class="ti ti-category input-icon"></i>
+                                <select class="form-select" name="rule_type" required disabled>
+                                    <option value="FLAT" ${data.rule_type === 'FLAT' ? 'selected' : ''}>Valor Fixo</option>
+                                    <option value="TIERED" ${data.rule_type === 'TIERED' ? 'selected' : ''}>Por Faixa</option>
+                                    <option value="BONUS" ${data.rule_type === 'BONUS' ? 'selected' : ''}>Bônus</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium">Descrição</label>
+                            <div class="form-group-icon">
+                                <i class="ti ti-file-text input-icon"></i>
+                                <textarea class="form-control" name="description" rows="3">${data.description || ''}</textarea>
+                            </div>
+                        </div>
+                        ${specificFields}
+                    </div>
+                </div>
+            `;
+                new bootstrap.Modal(document.getElementById('editRuleModal')).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire('Erro!', 'Não foi possível carregar os dados da regra.', 'error');
+            });
+    }
+
+    // Função para salvar edição da regra
+    function saveEditRule() {
+        const form = document.getElementById('editRuleForm');
+        const formData = new FormData(form);
+        const ruleId = formData.get('rule_id');
+
+        const data = {
+            name: formData.get('name'),
+            description: formData.get('description')
+        };
+        
+        const ruleType = document.querySelector('#editRuleForm select[name="rule_type"]').value;
+        data.rule_type = ruleType;
+
+        if (ruleType === 'FLAT') {
+            data.flat_percentage = parseFloat(formData.get('flat_percentage')) || null;
+        } else if (ruleType === 'BONUS') {
+            data.bonus_type = formData.get('bonus_type');
+            data.bonus_amount = parseFloat(formData.get('bonus_amount')) || null;
+        }
+        
+        fetch(`/api/v1/commissions/rules/${ruleId}/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(data)
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Erro ao carregar faixas');
-        });
-}
-
-// Render tiers
-function renderTiers() {
-    const container = document.getElementById('tiersContainer');
-    
-    if (tiersData.length === 0) {
-        container.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="ti ti-inbox fs-1 d-block mb-2"></i>
-                Nenhuma faixa configurada
-            </div>
-        `;
-        return;
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                showSuccessAlert('Regra atualizada com sucesso.');
+                bootstrap.Modal.getInstance(document.getElementById('editRuleModal')).hide();
+                setTimeout(() => {
+                    location.reload();
+                }, 2500);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                const errorMessage = error.name ? Object.values(error).map(val => val[0]).join('<br>') : 'Não foi possível atualizar a regra.';
+                Swal.fire('Erro!', errorMessage, 'error');
+            });
     }
-    
-    let html = '';
-    tiersData.forEach((tier, index) => {
-        html += `
-            <div class="card mb-2">
-                <div class="card-body py-2">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <label class="form-label mb-1">Valor Limite (R$)</label>
-                            <input type="number" class="form-control form-control-sm" 
-                                   value="${tier.limit_value}" 
-                                   onchange="updateTier(${index}, 'limit_value', this.value)"
-                                   min="0" step="0.01">
+
+    // Função para deletar regra
+    function deleteRule(ruleId) {
+        Swal.fire({
+            title: 'Tem certeza?',
+            text: "Esta ação não pode ser desfeita!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Sim, excluir!',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/api/v1/commissions/rules/${ruleId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => Promise.reject(err));
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        showSuccessAlert('A regra foi excluída com sucesso.');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2500);
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        Swal.fire('Erro!', 'Não foi possível excluir a regra.', 'error');
+                    });
+            }
+        });
+    }
+
+    // Função para gerenciar faixas
+    function manageTiers(ruleId) {
+        // Carrega todos os dados da regra, incluindo as faixas aninhadas
+        fetch(`/api/v1/commissions/rules/${ruleId}/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Armazena os dados da regra em uma variável global
+                currentRuleData = data;
+                
+                let tiersHtml = '<div id="tiersContainer">';
+
+                if (currentRuleData.tiers && currentRuleData.tiers.length > 0) {
+                    currentRuleData.tiers.forEach((tier) => {
+                        tiersHtml += `
+                            <div class="tier-row" data-tier-id="${tier.id}">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-medium">Valor Mínimo</label>
+                                        <div class="form-group-icon">
+                                            <i class="ti ti-currency-dollar input-icon"></i>
+                                            <input type="number" class="form-control tier-min" value="${tier.min_amount}" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-medium">Valor Máximo</label>
+                                        <div class="form-group-icon">
+                                            <i class="ti ti-currency-dollar input-icon"></i>
+                                            <input type="number" class="form-control tier-max" value="${tier.max_amount || ''}" step="0.01">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-medium">Percentual (%)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control tier-rate" value="${tier.commission_rate}" step="0.01">
+                                            <span class="input-group-text" style="background-color: #7FB6F0; color: white; border-color: #7FB6F0;">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeTier(this)" style="border-radius: 8px; font-weight: 600;">
+                                            <i class="ti ti-trash me-1"></i>Remover
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    tiersHtml += '<div class="text-center p-4 text-muted">Nenhuma faixa configurada. Clique em "Adicionar Faixa" para começar.</div>';
+                }
+                
+                tiersHtml += '</div>';
+                document.getElementById('tiersContent').innerHTML = tiersHtml;
+                new bootstrap.Modal(document.getElementById('tiersModal')).show();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                Swal.fire('Erro!', 'Não foi possível carregar os dados da regra.', 'error');
+            });
+    }
+
+    // Função para salvar faixas
+    function saveTiers() {
+        if (!currentRuleData) {
+            Swal.fire('Erro!', 'Dados da regra não encontrados.', 'error');
+            return;
+        }
+
+        const tiers = [];
+        let isValid = true;
+        document.querySelectorAll('.tier-row').forEach(row => {
+            const minAmount = row.querySelector('.tier-min').value;
+            const maxAmount = row.querySelector('.tier-max').value;
+            const commissionRate = row.querySelector('.tier-rate').value;
+
+            if (minAmount === '' || commissionRate === '') {
+                isValid = false;
+                return;
+            }
+
+            tiers.push({
+                min_amount: parseFloat(minAmount),
+                max_amount: maxAmount ? parseFloat(maxAmount) : null,
+                commission_rate: parseFloat(commissionRate)
+            });
+        });
+        
+        if (!isValid) {
+            Swal.fire('Atenção!', 'Todos os campos de "Valor Mínimo" e "Percentual" devem ser preenchidos.', 'warning');
+            return;
+        }
+        
+        const updatedData = {
+            ...currentRuleData,
+            tiers: tiers
+        };
+        
+        delete updatedData.created_at;
+        delete updatedData.created_by;
+        
+        fetch(`/api/v1/commissions/rules/${currentRuleData.id}/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(updatedData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.json();
+            })
+            .then(data => {
+                showSuccessAlert('Faixas salvas com sucesso.');
+                bootstrap.Modal.getInstance(document.getElementById('tiersModal')).hide();
+                setTimeout(() => {
+                    location.reload();
+                }, 2500);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                const errorMessage = error.name ? Object.values(error).map(val => val[0]).join('<br>') : 'Não foi possível salvar as faixas.';
+                Swal.fire('Erro!', errorMessage, 'error');
+            });
+    }
+
+    // Função para adicionar nova faixa
+    function addTier() {
+        const container = document.getElementById('tiersContainer');
+        const emptyState = container.querySelector('.text-center');
+        if (emptyState) {
+            emptyState.remove();
+        }
+        const newTierHtml = `
+            <div class="tier-row" data-tier-id="">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Valor Mínimo</label>
+                        <div class="form-group-icon">
+                            <i class="ti ti-currency-dollar input-icon"></i>
+                            <input type="number" class="form-control tier-min" value="" step="0.01">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label mb-1">Percentual (%)</label>
-                            <input type="number" class="form-control form-control-sm" 
-                                   value="${tier.percentage}" 
-                                   onchange="updateTier(${index}, 'percentage', this.value)"
-                                   min="0" max="100" step="0.01">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Valor Máximo</label>
+                        <div class="form-group-icon">
+                            <i class="ti ti-currency-dollar input-icon"></i>
+                            <input type="number" class="form-control tier-max" value="" step="0.01">
                         </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTier(${index})">
-                                <i class="ti ti-trash"></i> Remover
-                            </button>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-medium">Percentual (%)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control tier-rate" value="" step="0.01">
+                            <span class="input-group-text" style="background-color: #7FB6F0; color: white; border-color: #7FB6F0;">%</span>
                         </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm w-100" onclick="removeTier(this)" style="border-radius: 8px; font-weight: 600;">
+                            <i class="ti ti-trash me-1"></i>Remover
+                        </button>
                     </div>
                 </div>
             </div>
         `;
-    });
-    
-    container.innerHTML = html;
-}
+        container.insertAdjacentHTML('beforeend', newTierHtml);
+    }
 
-// Add new tier
-function addTier() {
-    tiersData.push({
-        limit_value: 0,
-        percentage: 0,
-        id: null
-    });
-    renderTiers();
-}
+    // Função para remover faixa
+    function removeTier(button) {
+        button.closest('.tier-row').remove();
+    }
 
-// Update tier
-function updateTier(index, field, value) {
-    tiersData[index][field] = parseFloat(value) || 0;
-}
+    // Funções auxiliares para filtros e busca
+    function updateCounts() {
+        const rules = document.querySelectorAll('.rule-item');
+        let counts = { all: 0, FLAT: 0, TIERED: 0, BONUS: 0 };
 
-// Remove tier
-function removeTier(index) {
-    tiersData.splice(index, 1);
-    renderTiers();
-}
+        rules.forEach(rule => {
+            const type = rule.dataset.ruleType;
+            counts.all++;
+            if (counts.hasOwnProperty(type)) {
+                counts[type]++;
+            }
+        });
 
-// Save tiers
-function saveTiers() {
-    fetch(`/api/v1/commissions/rules/${currentRuleId}/tiers/save/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ tiers: tiersData })
-    })
-    .then(response => {
-        if (response.ok) {
-            bootstrap.Modal.getInstance(document.getElementById('manageTiersModal')).hide();
-            alert('Faixas salvas com sucesso!');
-        } else {
-            alert('Erro ao salvar faixas');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Erro ao salvar faixas');
-    });
-}
+        document.getElementById('countAll').textContent = counts.all;
+        document.getElementById('countFlat').textContent = counts.FLAT;
+        document.getElementById('countTiered').textContent = counts.TIERED;
+        document.getElementById('countBonus').textContent = counts.BONUS;
+    }
 
-// Reset modal when closed
-document.getElementById('createRuleModal').addEventListener('hidden.bs.modal', function () {
-    document.getElementById('ruleForm').reset();
-    document.getElementById('createRuleModalLabel').innerHTML = '<i class="ti ti-plus me-2"></i>Nova Regra de Comissão';
-    document.querySelectorAll('.rule-config').forEach(config => config.classList.add('d-none'));
-    currentRuleId = null;
-});
+    function setupFilters() {
+        const filterButtons = document.querySelectorAll('input[name="filterType"]');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('change', () => {
+                const filterValue = btn.value;
+                const items = document.querySelectorAll('.rule-item');
 
-// Form submission
-document.getElementById('ruleForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const url = currentRuleId 
-        ? `/api/v1/commissions/rules/${currentRuleId}/`
-        : `/api/v1/commissions/rules/`;
-    const method = currentRuleId ? 'PUT' : 'POST';
-    
-    fetch(url, {
-        method: method,
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        },
-    })
-    .then(response => {
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert('Erro ao salvar regra');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Erro ao salvar regra');
-    });
-});
+                items.forEach(item => {
+                    if (filterValue === 'all') {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = item.dataset.ruleType === filterValue ? 'block' : 'none';
+                    }
+                });
+            });
+        });
+    }
+
+    function setupSearch() {
+        const searchInput = document.getElementById('searchRules');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.rule-item');
+
+            items.forEach(item => {
+                const name = item.dataset.ruleName;
+                const description = item.dataset.ruleDesc;
+
+                if (name.includes(searchTerm) || description.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
 </script>
-
-<style>
-/* Enhanced styling for better visual appeal */
-.rule-config {
-    background-color: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-top: 1.5rem;
-}
-
-.table th {
-    border-top: none;
-    font-weight: 500;
-    color: #6b7280;
-    font-size: 0.875rem;
-    letter-spacing: 0.025em;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-.form-control, .form-select {
-    transition: all 0.2s ease;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #0891b2;
-    box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
-}
-
-.btn {
-    transition: all 0.2s ease;
-    font-weight: 500;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-.empty-state {
-    padding: 3rem 1rem;
-}
-
-.tiers-container .card {
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    transition: all 0.2s ease;
-    margin-bottom: 1rem;
-}
-
-.tiers-container .card:hover {
-    border-color: #0891b2;
-    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.1);
-}
-
-.alert {
-    border-radius: 12px;
-}
-
-.badge {
-    font-weight: 500;
-}
-
-.card {
-    transition: all 0.2s ease;
-}
-
-.modal-content {
-    backdrop-filter: blur(10px);
-}
-
-.input-group-text {
-    font-weight: 500;
-}
-</style>
 {% endblock %}

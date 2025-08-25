@@ -91,7 +91,7 @@
               </a>
             </li>
             <li class="sidebar-item">
-              <a class="sidebar-link sidebar-link danger-hover-bg" href="#" aria-expanded="false">
+              <a class="sidebar-link sidebar-link danger-hover-bg" href="{% url 'accounts:cadastrar_vendedor' %}" aria-expanded="false">
                 <span class="aside-icon p-2 bg-light-danger rounded-3">
                   <i class="ti ti-users fs-7 text-danger"></i>
                 </span>
@@ -107,7 +107,7 @@
               </a>
             </li>
             <li class="sidebar-item">
-                <a class="sidebar-link sidebar-link secondary-hover-bg" href="#" aria-expanded="false">
+                <a class="sidebar-link sidebar-link secondary-hover-bg" href="{% url "commissions:commission_rule_list" %}" aria-expanded="false">
                   <span class="aside-icon p-2 bg-light-secondary rounded-3">
                     <i class="ti ti-gavel fs-7 text-secondary"></i>
                   </span>
@@ -169,7 +169,7 @@
           </ul>
           <div class="navbar-collapse justify-content-end px-0" id="navbarNav">
             <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-end">
-              <a href="https://adminmart.com/product/Spike-free-bootstrap-admin-dashboard/" target="_blank" class="btn btn-primary">Download Free</a>
+              <div target="_blank" class="light">Olá, seja bem-vindo. {{user.username}}</div>
               <li class="nav-item dropdown">
                 <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop2" data-bs-toggle="dropdown"
                   aria-expanded="false">

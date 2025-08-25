@@ -26,3 +26,20 @@ class CustomLogoutView(LogoutView):
         return super().dispatch(request, *args, **kwargs)
     
 
+# views.py - Adicione esta view ao seu arquivo de views existente
+
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+
+def is_gestor(user):
+    """Verifica se o usuário é um gestor"""
+    return user.is_authenticated and user.type_user == 'GE'
+
+@login_required
+@user_passes_test(is_gestor, login_url='/')
+def cadastrar_vendedor(request):
+    """
+    View para cadastro de vendedores - apenas gestores podem acessar
+    """
+    return render(request, 'accounts/equipe.html')

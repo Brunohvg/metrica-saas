@@ -1,0 +1,665 @@
+{% extends "base/base_dashboard.html" %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .table th { border-top: none; font-weight: 600; color: #6B7280; font-size: 0.875rem; letter-spacing: 0.025em; padding-top: 1rem; padding-bottom: 1rem; }
+    .table td { vertical-align: middle; }
+    .action-btn { width: 30px; height: 30px; border: 1px solid transparent; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    .action-btn:hover { transform: translateY(-1px); }
+    .form-control, .form-select { border: 1px solid #D1D5DB; border-radius: 10px; padding: 0.75rem 1rem; font-size: 0.875rem; }
+    .form-control:focus, .form-select:focus { border-color: #7FB6F0; box-shadow: 0 0 0 3px rgba(127, 182, 240, 0.25); }
+    .modal-content { border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+    .modal-header, .modal-footer { border: none; }
+
+    /* Cards compactos para regras */
+    .rule-card-compact {
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.15s ease;
+        margin-bottom: 0.5rem;
+    }
+
+    .rule-card-compact:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+        border-color: #7FB6F0;
+    }
+
+    .rule-icon {
+        width: 35px;
+        height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 600;
+        color: white;
+        font-size: 0.875rem;
+    }
+
+    .rule-type-badge-small {
+        font-size: 0.6875rem;
+        font-weight: 500;
+        padding: 0.125rem 0.5rem;
+        border-radius: 12px;
+        display: inline-block;
+    }
+
+    .rule-type-FLAT { background-color: #E9FBF3; color: #0A6C47; }
+    .rule-type-TIERED { background-color: #FFF7E8; color: #B45309; }
+    .rule-type-BONUS { background-color: #F0F9FF; color: #1D4ED8; }
+
+    .rule-icon-FLAT { background-color: #10B981; }
+    .rule-icon-TIERED { background-color: #F59E0B; }
+    .rule-icon-BONUS { background-color: #3B82F6; }
+
+    .group-header-compact {
+        background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border-left: 4px solid #7FB6F0;
+        margin-bottom: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .filter-section {
+        background: #F8F9FA;
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-check:checked + .btn-outline-primary {
+        background-color: #7FB6F0;
+        border-color: #7FB6F0;
+        color: white;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-active { background-color: #22C55E; }
+    .status-inactive { background-color: #EF4444; }
+
+    /* Estilos melhorados para o modal */
+    .modal-section {
+        background: #F8F9FA;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #7FB6F0;
+    }
+
+    .modal-section-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .modal-section-title i {
+        margin-right: 0.5rem;
+        font-size: 1.1rem;
+        color: #7FB6F0;
+    }
+
+    .form-group-icon {
+        position: relative;
+    }
+
+    .form-group-icon .form-control,
+    .form-group-icon .form-select {
+        padding-left: 2.75rem;
+    }
+
+    .form-group-icon .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        z-index: 10;
+        font-size: 0.875rem;
+    }
+
+    .form-label-required::after {
+        content: " *";
+        color: #EF4444;
+        font-weight: 600;
+    }
+
+    .rule-config {
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .config-info {
+        background: #F0F9FF;
+        border: 1px solid #DBEAFE;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .modal-dialog {
+            margin: 1rem;
+        }
+        
+        .modal-section {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .rule-card-compact {
+            padding: 0.5rem;
+        }
+        
+        .filter-section .row {
+            gap: 1rem;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+            min-width: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card-header border-0 d-flex justify-content-between align-items-center"
+             style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+            <h5 class="card-title mb-0 fw-semibold" style="color:#0F172A;"><i class="ti ti-gavel me-2"></i>Gerenciar Regras de Comissão</h5>
+            <button class="btn btn-light btn-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#createRuleModal" style="border-radius: 8px; font-weight: 600; color:#0F172A; border:1px solid rgba(15,23,42,.08);"><i class="ti ti-plus me-1"></i>Nova Regra</button>
+        </div>
+        
+        <div class="card-body">
+            <!-- Filtros e Busca -->
+            <div class="filter-section">
+                <div class="row align-items-center g-3">
+                    <div class="col-lg-8 col-md-12">
+                        <label class="form-label fw-medium mb-2">Filtrar por tipo:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="filterType" id="filterAll" value="all" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="filterAll">
+                                <i class="ti ti-list me-1"></i>Todas (<span id="countAll">0</span>)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="filterType" id="filterFLAT" value="FLAT">
+                            <label class="btn btn-outline-primary btn-sm" for="filterFLAT">
+                                <i class="ti ti-percentage me-1"></i>Valor Fixo (<span id="countFLAT">0</span>)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="filterType" id="filterTIERED" value="TIERED">
+                            <label class="btn btn-outline-primary btn-sm" for="filterTIERED">
+                                <i class="ti ti-layers-intersect me-1"></i>Por Faixa (<span id="countTIERED">0</span>)
+                            </label>
+                            
+                            <input type="radio" class="btn-check" name="filterType" id="filterBONUS" value="BONUS">
+                            <label class="btn btn-outline-primary btn-sm" for="filterBONUS">
+                                <i class="ti ti-gift me-1"></i>Bônus (<span id="countBONUS">0</span>)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-12">
+                        <label class="form-label fw-medium mb-2">Buscar regra:</label>
+                        <input type="text" class="form-control" id="searchRules" placeholder="Digite nome ou descrição...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista Compacta de Regras -->
+            <div id="rulesCompactList">
+                <!-- Lista será inserida aqui via JavaScript -->
+            </div>
+
+            <!-- Estados de Loading e Empty -->
+            <div id="loadingState" class="text-center p-5 d-none">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-3 text-muted">Carregando regras...</p>
+            </div>
+            
+            <div id="emptyState" class="text-center p-5 {% if commission_rules %}d-none{% endif %}">
+                <i class="ti ti-inbox display-4 mb-3" style="color: #D1D5DB;"></i>
+                <h6 style="color: #6B7280; font-weight: 600;">Nenhuma regra de comissão cadastrada</h6>
+                <p style="color: #9CA3AF; font-size: 0.875rem;">Clique em "Nova Regra" para começar</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Melhorado -->
+<div class="modal fade" id="createRuleModal" tabindex="-1" aria-labelledby="createRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0">
+            <div class="modal-header" style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+                <h5 class="modal-title fw-semibold d-flex align-items-center" id="createRuleModalLabel">
+                    <i class="ti ti-plus me-2"></i>Nova Regra de Comissão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form id="ruleForm" method="post" novalidate>
+                {% csrf_token %}
+                <div class="modal-body" style="padding: 2rem;">
+                    
+                    <!-- Seção: Informações Básicas -->
+                    <div class="modal-section">
+                        <h6 class="modal-section-title">
+                            <i class="ti ti-info-circle"></i>Informações Básicas
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-medium form-label-required">Nome da Regra</label>
+                                <div class="form-group-icon">
+                                    <i class="ti ti-tag input-icon"></i>
+                                    <input type="text" id="ruleName" name="name" class="form-control" required maxlength="100" placeholder="Ex: Comissão Padrão 5%">
+                                </div>
+                                <small class="text-muted">Escolha um nome descritivo para identificar facilmente esta regra</small>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label class="form-label fw-medium form-label-required">Tipo de Regra</label>
+                                <div class="form-group-icon">
+                                    <i class="ti ti-category input-icon"></i>
+                                    <select id="ruleType" name="rule_type" class="form-select" required onchange="toggleRuleTypeFields()">
+                                        <option value="">Selecione o tipo</option>
+                                        <option value="FLAT">💰 Valor Fixo</option>
+                                        <option value="TIERED">📊 Por Faixa</option>
+                                        <option value="BONUS">🎁 Bônus</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label fw-medium">Descrição</label>
+                                <div class="form-group-icon">
+                                    <i class="ti ti-file-text input-icon"></i>
+                                    <textarea id="ruleDescription" name="description" class="form-control" rows="3" placeholder="Descreva como esta regra funciona e quando deve ser aplicada..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Configuração de Valor Fixo -->
+                    <div id="flatRateConfig" class="modal-section rule-config d-none">
+                        <h6 class="modal-section-title">
+                            <i class="ti ti-percentage"></i>Configuração - Valor Fixo
+                        </h6>
+                        <div class="config-info">
+                            <div class="d-flex align-items-center">
+                                <i class="ti ti-info-circle me-2" style="color: #3B82F6;"></i>
+                                <span style="color: #1E40AF; font-size: 0.875rem;">Uma porcentagem fixa será aplicada sobre todas as vendas.</span>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Percentual de Comissão (%)</label>
+                                <div class="input-group">
+                                    <input type="number" id="flatPercentage" name="flat_percentage" class="form-control" min="0" max="100" step="0.01" placeholder="5.00">
+                                    <span class="input-group-text" style="background-color: #7FB6F0; color: #0F172A; border: 1px solid #7FB6F0; font-weight: 600;">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Configuração Por Faixa -->
+                    <div id="tieredConfig" class="modal-section rule-config d-none">
+                        <h6 class="modal-section-title">
+                            <i class="ti ti-layers-intersect"></i>Configuração - Por Faixa
+                        </h6>
+                        <div class="config-info">
+                            <div class="d-flex align-items-center">
+                                <i class="ti ti-info-circle me-2" style="color: #F59E0B;"></i>
+                                <span style="color: #D97706; font-size: 0.875rem;">Diferentes percentuais para diferentes faixas de vendas. Configure as faixas após criar a regra.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Configuração de Bônus -->
+                    <div id="bonusConfig" class="modal-section rule-config d-none">
+                        <h6 class="modal-section-title">
+                            <i class="ti ti-gift"></i>Configuração - Bônus
+                        </h6>
+                        <div class="config-info">
+                            <div class="d-flex align-items-center">
+                                <i class="ti ti-info-circle me-2" style="color: #10B981;"></i>
+                                <span style="color: #059669; font-size: 0.875rem;">Valor adicional baseado em metas ou condições específicas.</span>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Valor do Bônus (R$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background-color: #7FB6F0; color: #0F172A; border: 1px solid #7FB6F0; font-weight: 600;">R$</span>
+                                    <input type="number" id="bonusAmount" name="bonus_amount" class="form-control" min="0" step="0.01" placeholder="100.00">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-medium">Meta Mínima (R$)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text" style="background-color: #7FB6F0; color: #0F172A; border: 1px solid #7FB6F0; font-weight: 600;">R$</span>
+                                    <input type="number" id="minTarget" name="min_target" class="form-control" min="0" step="0.01" placeholder="1000.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer" style="background-color: #F9FAFB; border-radius: 0 0 16px 16px; padding: 1.5rem 2rem;">
+                    <div class="d-flex justify-content-between w-100">
+                        <div class="d-flex align-items-center text-muted">
+                            <i class="ti ti-info-circle me-2"></i>
+                            <small>Campos com * são obrigatórios</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn px-4 py-2" data-bs-dismiss="modal" style="background-color: #F3F4F6; color: #111827; border-radius: 10px;">
+                                <i class="ti ti-x me-2"></i>Cancelar
+                            </button>
+                            <button type="submit" class="btn px-4 py-2" style="background-color: #7FB6F0; color: #0F172A; border-radius: 10px; font-weight: 700;">
+                                <i class="ti ti-check me-2"></i>Salvar Regra
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteRuleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="ti ti-alert-circle text-danger display-4 mb-2"></i>
+                <h5 class="fw-bold">Confirmar Exclusão</h5>
+                <p class="text-muted">Tem certeza? Esta ação não pode ser desfeita.</p>
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="confirmDeleteBtn" type="button" class="btn btn-danger">Excluir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let createRuleModal, deleteRuleModal;
+let selectedRuleId = null;
+let allRules = [];
+
+const TYPE_LABELS = { 
+    'FLAT': 'Valor Fixo', 
+    'TIERED': 'Por Faixa', 
+    'BONUS': 'Bônus' 
+};
+
+const TYPE_DESCRIPTIONS = {
+    'FLAT': 'Percentual fixo aplicado sobre todas as vendas',
+    'TIERED': 'Diferentes percentuais para faixas de vendas',
+    'BONUS': 'Valor adicional baseado em metas específicas'
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    createRuleModal = new bootstrap.Modal(document.getElementById("createRuleModal"));
+    deleteRuleModal = new bootstrap.Modal(document.getElementById("deleteRuleModal"));
+    
+    // Dados iniciais do Django
+    allRules = [
+        {% for rule in commission_rules %}
+        {
+            id: {{ rule.id }},
+            name: "{{ rule.name|escapejs }}",
+            rule_type: "{{ rule.rule_type }}",
+            description: "{{ rule.description|escapejs }}",
+            created_by: "{{ rule.created_by.username|default:'Sistema' }}",
+            created_at: "{{ rule.created_at|date:'d/m/Y H:i' }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    renderRulesCompact(allRules);
+    updateCounts(allRules);
+    setupFilters();
+    setupSearch();
+    
+    document.getElementById("ruleForm").addEventListener("submit", handleFormSubmit);
+});
+
+function renderRulesCompact(rules) {
+    const listContainer = document.getElementById("rulesCompactList");
+    const emptyState = document.getElementById("emptyState");
+    
+    if (rules.length === 0) {
+        listContainer.innerHTML = '';
+        emptyState.classList.remove('d-none');
+        return;
+    }
+    
+    emptyState.classList.add('d-none');
+    
+    // Agrupa regras por tipo
+    const groupedRules = rules.reduce((acc, rule) => {
+        if (!acc[rule.rule_type]) acc[rule.rule_type] = [];
+        acc[rule.rule_type].push(rule);
+        return acc;
+    }, {});
+
+    let html = '';
+    
+    // Ordem de exibição dos tipos
+    const typeOrder = ['FLAT', 'TIERED', 'BONUS'];
+    
+    typeOrder.forEach(type => {
+        if (groupedRules[type]) {
+            // Cabeçalho do grupo
+            html += `
+                <div class="group-header-compact group-section" data-group-type="${type}">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <i class="ti ti-${getTypeIcon(type)} me-2"></i>
+                            <strong>${TYPE_LABELS[type]}</strong>
+                            <span class="ms-2 text-muted">(${groupedRules[type].length})</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Lista de regras do grupo
+            groupedRules[type].forEach(rule => {
+                html += `
+                    <div class="rule-card-compact rule-item" 
+                         data-rule-type="${rule.rule_type}"
+                         data-rule-name="${rule.name.toLowerCase()}"
+                         data-rule-description="${rule.description.toLowerCase()}">
+                        <div class="d-flex align-items-center">
+                            <div class="rule-icon rule-icon-${rule.rule_type} me-3">
+                                <i class="ti ti-${getTypeIcon(rule.rule_type)}"></i>
+                            </div>
+                            
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="mb-0 fw-semibold" style="font-size: 0.9rem;">${rule.name}</h6>
+                                        <div class="d-flex align-items-center mt-1">
+                                            <span class="rule-type-badge-small rule-type-${rule.rule_type}">${TYPE_LABELS[rule.rule_type]}</span>
+                                            <small class="text-muted ms-2">por ${rule.created_by}</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-none d-md-block text-end">
+                                        <small class="text-muted d-block">${rule.description ? rule.description.substring(0, 60) + '...' : 'Sem descrição'}</small>
+                                        <small class="text-muted">${rule.created_at}</small>
+                                    </div>
+                                    
+                                    <div class="d-flex gap-1 ms-3">
+                                        <button class="action-btn btn btn-outline-primary btn-sm" onclick="viewRule(${rule.id})" title="Visualizar">
+                                            <i class="ti ti-eye" style="font-size: 0.875rem;"></i>
+                                        </button>
+                                        <button class="action-btn btn btn-outline-warning btn-sm" onclick="editRule(${rule.id})" title="Editar">
+                                            <i class="ti ti-edit" style="font-size: 0.875rem;"></i>
+                                        </button>
+                                        ${rule.rule_type === 'TIERED' ? `
+                                        <button class="action-btn btn btn-outline-success btn-sm" onclick="manageTiers(${rule.id})" title="Gerenciar Faixas">
+                                            <i class="ti ti-layers-intersect" style="font-size: 0.875rem;"></i>
+                                        </button>
+                                        ` : ''}
+                                        <button class="action-btn btn btn-outline-danger btn-sm" onclick="confirmDeleteRule(${rule.id})" title="Excluir">
+                                            <i class="ti ti-trash" style="font-size: 0.875rem;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    });
+    
+    listContainer.innerHTML = html;
+}
+
+function getTypeIcon(type) {
+    const icons = {
+        'FLAT': 'percentage',
+        'TIERED': 'layers-intersect', 
+        'BONUS': 'gift'
+    };
+    return icons[type] || 'tag';
+}
+
+function updateCounts(rules) {
+    const counts = rules.reduce((acc, rule) => {
+        acc[rule.rule_type] = (acc[rule.rule_type] || 0) + 1;
+        return acc;
+    }, {});
+    
+    document.getElementById('countAll').textContent = rules.length;
+    document.getElementById('countFLAT').textContent = counts.FLAT || 0;
+    document.getElementById('countTIERED').textContent = counts.TIERED || 0;
+    document.getElementById('countBONUS').textContent = counts.BONUS || 0;
+}
+
+function setupFilters() {
+    const filterButtons = document.querySelectorAll('input[name="filterType"]');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('change', () => {
+            const filterValue = btn.value;
+            const items = document.querySelectorAll('.rule-item');
+            const groups = document.querySelectorAll('.group-section');
+            
+            if (filterValue === 'all') {
+                items.forEach(item => item.style.display = 'block');
+                groups.forEach(group => group.style.display = 'block');
+            } else {
+                items.forEach(item => {
+                    if (item.dataset.ruleType === filterValue) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                groups.forEach(group => {
+                    if (group.dataset.groupType === filterValue) {
+                        group.style.display = 'block';
+                    } else {
+                        group.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+}
+
+function setupSearch() {
+    const searchInput = document.getElementById('searchRules');
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.rule-item');
+        
+        items.forEach(item => {
+            const name = item.dataset.ruleName;
+            const description = item.dataset.ruleDescription;
+            
+            if (name.includes(searchTerm) || description.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+}
+
+function toggleRuleTypeFields() {
+    const ruleType = document.getElementById('ruleType').value;
+    const configs = document.querySelectorAll('.rule-config');
+    
+    configs.forEach(config => config.classList.add('d-none'));
+    
+    if (ruleType) {
+        const targetConfig = document.getElementById(ruleType.toLowerCase() + 'Config');
+        if (targetConfig) {
+            targetConfig.classList.remove('d-none');
+        }
+    }
+}
+
+function handleFormSubmit(event) {
+    event.preventDefault();
+    // Aqui você implementaria a lógica de salvamento
+    console.log('Form submitted');
+}
+
+function viewRule(ruleId) {
+    // Implementar visualização da regra
+    console.log('View rule:', ruleId);
+}
+
+function editRule(ruleId) {
+    // Implementar edição da regra
+    console.log('Edit rule:', ruleId);
+}
+
+function manageTiers(ruleId) {
+    // Implementar gerenciamento de faixas
+    console.log('Manage tiers:', ruleId);
+}
+
+function confirmDeleteRule(ruleId) {
+    selectedRuleId = ruleId;
+    deleteRuleModal.show();
+}
+
+function deleteRule(ruleId) {
+    // Implementar exclusão da regra
+    console.log('Delete rule:', ruleId);
+    deleteRuleModal.hide();
+}
+</script>
+{% endblock %}

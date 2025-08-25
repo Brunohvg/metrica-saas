@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cadastrar Vendedor - Metrica{% endblock %}
+
+{% block extra_css %}
+<style>
+  .form-floating > .form-control:focus ~ label,
+  .form-floating > .form-control:not(:placeholder-shown) ~ label {
+    opacity: .65;
+    transform: scale(.85) translateY(-0.5rem) translateX(0.15rem);
+  }
+  
+  .alert-dismissible {
+    padding-right: 3rem;
+  }
+  
+  .preview-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #e9ecef;
+  }
+  
+  .upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .upload-area:hover {
+    border-color: #5d87ff;
+    background-color: #f8f9ff;
+  }
+  
+  .upload-area.dragover {
+    border-color: #5d87ff;
+    background-color: #f0f4ff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <div class="d-flex align-items-center">
+            <i class="ti ti-user-plus fs-6 me-2"></i>
+            <h4 class="mb-0">Cadastrar Novo Vendedor</h4>
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- Alert para mensagens -->
+          <div id="alertContainer"></div>
+          
+          <form id="vendedorForm" enctype="multipart/form-data">
+            <div class="row">
+              <!-- Foto de Perfil -->
+              <div class="col-md-4 mb-4">
+                <div class="text-center">
+                  <h6 class="mb-3">Foto de Perfil</h6>
+                  <div class="mb-3">
+                    <img id="previewImage" src="{% static 'assets/images/profile/user1.jpg' %}" 
+                         alt="Preview" class="preview-image">
+                  </div>
+                  <div class="upload-area" id="uploadArea">
+                    <i class="ti ti-camera fs-1 text-muted mb-2"></i>
+                    <p class="text-muted mb-0">Clique ou arraste uma foto</p>
+                    <input type="file" id="profilePhoto" name="profile_photo" 
+                           accept="image/*" class="d-none">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Dados Pessoais -->
+              <div class="col-md-8">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="firstName" 
+                             name="first_name" placeholder="Nome" required>
+                      <label for="firstName">Nome *</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="lastName" 
+                             name="last_name" placeholder="Sobrenome" required>
+                      <label for="lastName">Sobrenome *</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="username" 
+                             name="username" placeholder="Nome de usuário" required>
+                      <label for="username">Nome de usuário *</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="email" class="form-control" id="email" 
+                             name="email" placeholder="E-mail" required>
+                      <label for="email">E-mail *</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="text" class="form-control" id="document" 
+                             name="document" placeholder="CPF" required maxlength="14">
+                      <label for="document">CPF *</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="tel" class="form-control" id="phone" 
+                             name="phone" placeholder="Telefone" maxlength="15">
+                      <label for="phone">Telefone</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <input type="date" class="form-control" id="dateOfBirth" 
+                             name="date_of_birth" placeholder="Data de Nascimento">
+                      <label for="dateOfBirth">Data de Nascimento</label>
+                    </div>
+                  </div>
+                  
+                  <div class="col-md-6 mb-3">
+                    <div class="form-floating">
+                      <select class="form-select" id="typeUser" name="type_user" required>
+                        <option value="">Selecione o tipo</option>
+                        <option value="VE" selected>Vendedor</option>
+                        <option value="CX">Caixa</option>
+                        <option value="CT">Contábil</option>
+                      </select>
+                      <label for="typeUser">Tipo de Usuário *</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Senha -->
+            <div class="row mt-3">
+              <div class="col-md-6 mb-3">
+                <div class="form-floating">
+                  <input type="password" class="form-control" id="password" 
+                         name="password" placeholder="Senha" required minlength="8">
+                  <label for="password">Senha *</label>
+                </div>
+                <small class="text-muted">Mínimo 8 caracteres</small>
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <div class="form-floating">
+                  <input type="password" class="form-control" id="confirmPassword" 
+                         placeholder="Confirmar Senha" required>
+                  <label for="confirmPassword">Confirmar Senha *</label>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="d-flex gap-2 justify-content-end">
+                  <button type="button" class="btn btn-outline-secondary" onclick="limparFormulario()">
+                    <i class="ti ti-refresh me-1"></i>Limpar
+                  </button>
+                  <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="ti ti-device-floppy me-1"></i>Cadastrar Vendedor
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- Lista de Vendedores Recentes -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="ti ti-users me-2"></i>Vendedores Cadastrados Recentemente
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Tipo</th>
+                  <th>Data Cadastro</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="vendedoresTable">
+                <tr>
+                  <td colspan="6" class="text-center text-muted">
+                    <i class="ti ti-loader fs-4"></i>
+                    <p class="mb-0">Carregando vendedores...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuração CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // Upload de imagem
+    const uploadArea = document.getElementById('uploadArea');
+    const profilePhoto = document.getElementById('profilePhoto');
+    const previewImage = document.getElementById('previewImage');
+    
+    uploadArea.addEventListener('click', () => profilePhoto.click());
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            profilePhoto.files = files;
+            previewImageFile(files[0]);
+        }
+    });
+    
+    profilePhoto.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            previewImageFile(e.target.files[0]);
+        }
+    });
+    
+    function previewImageFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // Máscaras para CPF e telefone
+    document.getElementById('document').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+        e.target.value = value;
+    });
+    
+    document.getElementById('phone').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        e.target.value = value;
+    });
+    
+    // Validação de senha
+    document.getElementById('confirmPassword').addEventListener('input', function() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = this.value;
+        
+        if (password !== confirmPassword) {
+            this.setCustomValidity('As senhas não coincidem');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    // Submit do formulário
+    document.getElementById('vendedorForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        try {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="ti ti-loader-2 me-1"></i>Cadastrando...';
+            
+            const formData = new FormData(this);
+            
+            const response = await fetch('/api/accounts/users/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                showAlert('success', 'Vendedor cadastrado com sucesso!');
+                limparFormulario();
+                carregarVendedores();
+            } else {
+                let errorMessage = 'Erro ao cadastrar vendedor.';
+                if (data.errors) {
+                    errorMessage = Object.values(data.errors).flat().join(', ');
+                } else if (data.detail) {
+                    errorMessage = data.detail;
+                }
+                showAlert('danger', errorMessage);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showAlert('danger', 'Erro de conexão. Tente novamente.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+    
+    // Carregar vendedores
+    async function carregarVendedores() {
+        try {
+            const response = await fetch('/api/accounts/users/');
+            const data = await response.json();
+            
+            const tbody = document.getElementById('vendedoresTable');
+            
+            if (data.results && data.results.length > 0) {
+                const vendedores = data.results
+                    .filter(user => user.type_user === 'VE')
+                    .slice(0, 5); // Últimos 5
+                
+                tbody.innerHTML = vendedores.map(vendedor => `
+                    <tr>
+                        <td>
+                            <img src="${vendedor.profile_photo || '/static/assets/images/profile/user1.jpg'}" 
+                                 alt="${vendedor.first_name}" class="rounded-circle" width="40" height="40">
+                        </td>
+                        <td>${vendedor.first_name} ${vendedor.last_name}</td>
+                        <td>${vendedor.email}</td>
+                        <td>
+                            <span class="badge bg-success">Vendedor</span>
+                        </td>
+                        <td>${new Date(vendedor.date_joined).toLocaleDateString('pt-BR')}</td>
+                        <td>
+                            <span class="badge ${vendedor.is_active ? 'bg-success' : 'bg-danger'}">
+                                ${vendedor.is_active ? 'Ativo' : 'Inativo'}
+                            </span>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            <i class="ti ti-users-off fs-4"></i>
+                            <p class="mb-0">Nenhum vendedor cadastrado ainda</p>
+                        </td>
+                    </tr>
+                `;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar vendedores:', error);
+        }
+    }
+    
+    // Carregar vendedores ao inicializar
+    carregarVendedores();
+});
+
+function showAlert(type, message) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertId = 'alert-' + Date.now();
+    
+    const alertHTML = `
+        <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="ti ti-${type === 'success' ? 'check' : 'alert-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    alertContainer.innerHTML = alertHTML;
+    
+    // Auto-remover após 5 segundos
+    setTimeout(() => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+function limparFormulario() {
+    document.getElementById('vendedorForm').reset();
+    document.getElementById('previewImage').src = '/static/assets/images/profile/user1.jpg';
+    document.getElementById('typeUser').value = 'VE';
+}
+</script>
+{% endblock %}

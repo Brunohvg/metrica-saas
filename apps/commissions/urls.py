@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
-apps_name = 'commissions'
+
+app_name = 'commissions'
 
 urlpatterns = [
     path('', views.CommissionRuleListView.as_view(), name='commission_rule_list'),

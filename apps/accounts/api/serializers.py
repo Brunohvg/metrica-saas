@@ -1,24 +1,38 @@
+# Em apps/accounts/api/serializers.py
+
 from rest_framework import serializers
 from ..models import Account
 
 class AccountsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
-        fields = ('id', 'uuid', 'type_user', 'username', 'document', 'phone', 'profile_photo', 'date_of_birth','password',  )
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'email', 
+            'type_user', 'document', 'phone', 'date_of_birth', 
+            'is_active', 'password'
+        ]
+        
+        extra_kwargs = {
+            'password': {'write_only': True},
+            # 'first_name' agora é efetivamente o 'nome completo' e é obrigatório.
+            'first_name': {'required': True},
+            # 'last_name' se torna opcional e não aparecerá no formulário.
+            'last_name': {'required': False, 'allow_blank': True},
+        }
     
+    # Seus métodos create e update continuam perfeitos.
     def create(self, validated_data):
-        # Retira a senha do dicionário para tratar separado
         password = validated_data.pop('password')
+        # Garante que last_name seja uma string vazia se não for enviado
+        validated_data.setdefault('last_name', '')
         user = Account(**validated_data)
-        user.set_password(password)  # aqui ele salva criptografado
+        user.set_password(password)
         user.save()
         return user
     
     def update(self, instance, validated_data):
-        # Se a senha estiver no dicionário, trata ela separadamente
         password = validated_data.pop('password', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+        super().update(instance, validated_data)
         if password:
             instance.set_password(password)
         instance.save()
