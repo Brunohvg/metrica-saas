@@ -3,7 +3,7 @@
 const RULE_TYPE_DISPLAY = { FLAT: 'Valor Fixo', TIERED: 'Por Faixa', BONUS: 'Bônus' };
 
 /**
- * Renderiza o conteúdo do modal de visualização de uma regra.
+ * Renderiza o conteúdo do modal de visualização.
  * @param {object} rule - Os dados da regra.
  */
 export function renderViewModalContent(rule) {
@@ -38,7 +38,7 @@ export function renderViewModalContent(rule) {
 }
 
 /**
- * Renderiza o conteúdo do formulário de edição de uma regra.
+ * Renderiza o conteúdo do formulário de edição.
  * @param {object} rule - Os dados da regra.
  */
 export function renderEditModalContent(rule) {
@@ -96,10 +96,10 @@ export function renderEditModalContent(rule) {
 }
 
 /**
- * Renderiza uma única linha de faixa no modal de faixas.
- * @param {number} min - Valor mínimo da faixa.
- * @param {number} max - Valor máximo da faixa.
- * @param {number} rate - Percentual da faixa.
+ * Renderiza uma única linha de faixa.
+ * @param {string} min - Valor mínimo.
+ * @param {string} max - Valor máximo.
+ * @param {string} rate - Percentual.
  * @returns {string} - O HTML da linha.
  */
 export function renderTierRowHTML(min = "", max = "", rate = "") {
@@ -108,6 +108,6 @@ export function renderTierRowHTML(min = "", max = "", rate = "") {
         <div class="col-md-3"><input type="number" class="form-control tier-min" value="${min}" placeholder="Mínimo"></div>
         <div class="col-md-3"><input type="number" class="form-control tier-max" value="${max}" placeholder="Máximo"></div>
         <div class="col-md-3"><input type="number" class="form-control tier-rate" value="${rate}" placeholder="%"></div>
-        <div class="col-md-3"><button class="btn btn-danger btn-sm w-100 remove-tier-btn">Remover</button></div>
+        <div class="col-md-3"><button class="btn btn-danger btn-sm w-100" onclick="window.ruleActions.tiers.remove(this)">Remover</button></div>
     </div>`;
 }

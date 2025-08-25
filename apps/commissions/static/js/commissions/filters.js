@@ -1,15 +1,10 @@
 // apps/commissions/static/js/rules/filters.js
 
-/**
- * Atualiza os contadores de regras nos botões de filtro.
- */
 function updateCounts() {
     const rules = document.querySelectorAll('.rule-item');
-    const counts = { all: 0, FLAT: 0, TIERED: 0, BONUS: 0 };
+    let counts = { all: rules.length, FLAT: 0, TIERED: 0, BONUS: 0 };
 
     rules.forEach(rule => {
-        counts.all++;
-        // Garante que a contagem só aconteça se a chave existir
         if (counts.hasOwnProperty(rule.dataset.ruleType)) {
             counts[rule.dataset.ruleType]++;
         }
@@ -21,9 +16,6 @@ function updateCounts() {
     document.getElementById('countBonus').textContent = counts.BONUS;
 }
 
-/**
- * Aplica os filtros (tipo e busca) na lista de regras.
- */
 function applyFilters() {
     const filterValue = document.querySelector('input[name="filterType"]:checked').value;
     const searchTerm = document.getElementById('searchRules').value.toLowerCase();
@@ -38,11 +30,8 @@ function applyFilters() {
     });
 }
 
-/**
- * Configura os event listeners para os filtros e a barra de busca.
- */
 export function setupFiltersAndSearch() {
-    updateCounts(); // Atualiza a contagem inicial
+    updateCounts();
 
     document.querySelectorAll('input[name="filterType"]').forEach(btn => {
         btn.addEventListener('change', applyFilters);

@@ -2,39 +2,33 @@
 
 import { createRule, updateRule } from './api.js';
 import { showSuccessAlert, showErrorAlert, reloadPage } from './utils.js';
+import { getModalInstance } from './modal.js';
 
-/**
- * Configura os listeners para os formulários de criação e edição.
- * @param {function} callback - Função a ser chamada após o sucesso.
- */
-export function setupForms(callback) {
+export function setupForms() {
     const createForm = document.getElementById('ruleForm');
-    const editForm = document.getElementById('editRuleForm');
+    const editFormButton = document.querySelector('#editRuleModal .modal-footer button[onclick]'); // Botão Salvar do modal de edição
     const ruleTypeSelect = document.getElementById('ruleType');
 
     if (createForm) {
         createForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            submitCreateForm(callback);
+            submitCreateForm();
         });
     }
 
-    if (editForm) {
-        const saveEditBtn = document.getElementById('saveEditBtn');
-        saveEditBtn.addEventListener('click', () => {
-             submitEditForm(callback);
-        });
+    if (editFormButton) {
+        // Remove o onclick antigo para evitar duplicação e adiciona um listener
+        const newBtn = editFormButton.cloneNode(true);
+        editFormButton.parentNode.replaceChild(newBtn, editFormButton);
+        newBtn.addEventListener('click', submitEditForm);
     }
-
+    
     if (ruleTypeSelect) {
         ruleTypeSelect.addEventListener('change', toggleRuleTypeFields);
     }
 }
 
-/**
- * Mostra/esconde os campos específicos para cada tipo de regra no formulário de criação.
- */
-function toggleRuleTypeFields() {
+export function toggleRuleTypeFields() {
     const ruleType = document.getElementById('ruleType').value;
     const configSection = document.getElementById('ruleConfigSection');
     const configs = configSection.querySelectorAll('.rule-config');
@@ -47,11 +41,7 @@ function toggleRuleTypeFields() {
     if (ruleType === 'BONUS') document.getElementById('bonusConfig').classList.remove('d-none');
 }
 
-/**
- * Envia os dados do formulário de CRIAÇÃO.
- * @param {function} callback - Função a ser chamada após o sucesso.
- */
-async function submitCreateForm(callback) {
+async function submitCreateForm() {
     const form = document.getElementById('ruleForm');
     const formData = new FormData(form);
     const data = {
@@ -65,32 +55,26 @@ async function submitCreateForm(callback) {
         data.bonus_type = formData.get('bonus_type');
         data.bonus_amount = parseFloat(formData.get('bonus_amount')) || null;
     }
-
+    
     try {
         await createRule(data);
         showSuccessAlert('Regra criada com sucesso.');
-        callback(); // Fecha o modal e recarrega
-    } catch (error) {
+        getModalInstance('createRuleModal').hide();
+        reloadPage();
+    } catch(error) {
         showErrorAlert(error.message);
     }
 }
 
-/**
- * Envia os dados do formulário de EDIÇÃO.
- * @param {function} callback - Função a ser chamada após o sucesso.
- */
-async function submitEditForm(callback) {
+async function submitEditForm() {
     const form = document.getElementById('editRuleForm');
     const formData = new FormData(form);
-    const ruleId = formData.get('id');
-
-    // O rule_type está desabilitado, então precisamos pegá-lo de outra forma ou garantir que ele seja enviado
-    const ruleTypeValue = document.querySelector('#editRuleForm select[name="rule_type"]').value;
-
+    const ruleId = formData.get('id'); // Alterado de 'rule_id' para 'id' para consistência
+    
     const data = {
         name: formData.get('name'),
         description: formData.get('description'),
-        rule_type: ruleTypeValue
+        rule_type: document.querySelector('#editRuleForm select[name="rule_type"]').value
     };
 
     if (data.rule_type === 'FLAT') data.flat_percentage = parseFloat(formData.get('flat_percentage')) || null;
@@ -98,12 +82,13 @@ async function submitEditForm(callback) {
         data.bonus_type = formData.get('bonus_type');
         data.bonus_amount = parseFloat(formData.get('bonus_amount')) || null;
     }
-
+    
     try {
         await updateRule(ruleId, data);
         showSuccessAlert('Regra atualizada com sucesso.');
-        callback(); // Fecha o modal e recarrega
-    } catch (error) {
+        getModalInstance('editRuleModal').hide();
+        reloadPage();
+    } catch(error) {
         showErrorAlert(error.message);
     }
 }

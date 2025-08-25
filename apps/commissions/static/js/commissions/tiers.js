@@ -2,24 +2,16 @@
 
 import { renderTierRowHTML } from './render.js';
 import { updateRule } from './api.js';
-import { showSuccessAlert, showErrorAlert } from './utils.js';
+import { showSuccessAlert, showErrorAlert, reloadPage } from './utils.js';
 
-let currentRuleData = null; // Armazena a regra que está sendo editada
-const tiersContainer = document.getElementById('tiersContent');
+let currentRuleData = null;
 
-/**
- * Guarda os dados da regra atual que está sendo gerenciada.
- * @param {object} ruleData - Os dados completos da regra.
- */
 export function setCurrentRuleData(ruleData) {
     currentRuleData = ruleData;
 }
 
-/**
- * Renderiza o conteúdo inicial do modal de faixas.
- * @param {Array} tiers - A lista de faixas da regra.
- */
 export function renderTiersContent(tiers = []) {
+    const tiersContainer = document.getElementById('tiersContent');
     let tiersHtml = '<div id="tiersContainer">';
     if (tiers && tiers.length > 0) {
         tiers.forEach(t => {
@@ -32,43 +24,25 @@ export function renderTiersContent(tiers = []) {
     tiersContainer.innerHTML = tiersHtml;
 }
 
-/**
- * Adiciona uma nova linha de faixa vazia à interface.
- */
-function addTier() {
+export function addTier() {
     const container = document.getElementById('tiersContainer');
-    // Remove a mensagem de "nenhuma faixa" se ela existir
     const emptyState = container.querySelector('.text-center');
     if (emptyState) emptyState.remove();
-    
     container.insertAdjacentHTML('beforeend', renderTierRowHTML());
 }
 
-/**
- * Remove a linha da faixa correspondente ao botão clicado.
- * @param {HTMLElement} button - O botão de remover.
- */
-function removeTier(button) {
+export function removeTier(button) {
     button.closest('.tier-row').remove();
-    
-    // Se não houver mais faixas, mostra a mensagem de estado vazio
-    const container = document.getElementById('tiersContainer');
-    if (!container.querySelector('.tier-row')) {
-         container.innerHTML = '<div class="text-center p-4 text-muted">Nenhuma faixa configurada.</div>';
-    }
 }
 
-/**
- * Salva as faixas editadas via API.
- */
-async function saveTiers() {
+export async function saveTiers() {
     if (!currentRuleData) {
         showErrorAlert('Dados da regra não encontrados.');
         return;
     }
 
     const tiers = [];
-    document.querySelectorAll('#tiersContainer .tier-row').forEach(row => {
+    document.querySelectorAll('#tiersContent .tier-row').forEach(row => {
         const min = row.querySelector('.tier-min').value;
         const max = row.querySelector('.tier-max').value;
         const rate = row.querySelector('.tier-rate').value;
@@ -81,34 +55,17 @@ async function saveTiers() {
         }
     });
 
-    // Prepara os dados para a API, enviando apenas os campos que queremos atualizar
-    const payload = { tiers };
+    // Sua lógica original enviava o objeto inteiro, vamos mantê-la
+    const updatedData = { ...currentRuleData, tiers: tiers };
+    delete updatedData.created_at;
+    delete updatedData.created_by; // Remove campos que não devem ser enviados de volta
 
     try {
-        // Usamos PATCH aqui para atualizar apenas as faixas, em vez de PUT que substituiria o objeto inteiro
-        await updateRule(currentRuleData.id, payload);
+        await updateRule(currentRuleData.id, updatedData);
         showSuccessAlert('Faixas salvas com sucesso.');
-        // Oculta o modal e recarrega a página
-        const tiersModalEl = document.getElementById('tiersModal');
-        bootstrap.Modal.getInstance(tiersModalEl).hide();
-        setTimeout(() => location.reload(), 300);
+        bootstrap.Modal.getInstance(document.getElementById('tiersModal')).hide();
+        reloadPage();
     } catch (error) {
         showErrorAlert(error.message);
     }
-}
-
-
-/**
- * Configura os event listeners para o modal de faixas.
- */
-export function setupTiersModal() {
-    document.getElementById('addTierBtn').addEventListener('click', addTier);
-    document.getElementById('saveTiersBtn').addEventListener('click', saveTiers);
-
-    // Usa delegação de eventos para os botões de remover
-    tiersContainer.addEventListener('click', (event) => {
-        if (event.target.classList.contains('remove-tier-btn')) {
-            removeTier(event.target);
-        }
-    });
 }

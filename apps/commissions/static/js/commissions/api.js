@@ -8,7 +8,7 @@ const CSRF_TOKEN = getCSRFToken();
 /**
  * Busca os dados de uma regra específica.
  * @param {number} ruleId - O ID da regra.
- * @returns {Promise<object>} - Os dados da regra.
+ * @returns {Promise<object>}
  */
 export async function fetchRuleById(ruleId) {
     const response = await fetch(`${API_URL}${ruleId}/`);
@@ -19,9 +19,9 @@ export async function fetchRuleById(ruleId) {
 }
 
 /**
- * Cria uma nova regra de comissão.
+ * Cria uma nova regra.
  * @param {object} data - Os dados da nova regra.
- * @returns {Promise<object>} - Os dados da regra criada.
+ * @returns {Promise<object>}
  */
 export async function createRule(data) {
     const response = await fetch(API_URL, {
@@ -30,31 +30,33 @@ export async function createRule(data) {
         body: JSON.stringify(data)
     });
     if (!response.ok) {
-        throw new Error('Não foi possível criar a regra.');
+        const err = await response.json();
+        throw new Error(err.detail || 'Não foi possível criar a regra.');
     }
     return await response.json();
 }
 
 /**
- * Atualiza uma regra existente (PUT ou PATCH).
+ * Atualiza uma regra existente.
  * @param {number} ruleId - O ID da regra.
  * @param {object} data - Os dados a serem atualizados.
- * @returns {Promise<object>} - Os dados da regra atualizada.
+ * @returns {Promise<object>}
  */
 export async function updateRule(ruleId, data) {
     const response = await fetch(`${API_URL}${ruleId}/`, {
-        method: 'PUT', // Ou PATCH, dependendo da sua API
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify(data)
     });
     if (!response.ok) {
-        throw new Error('Não foi possível atualizar a regra.');
+        const err = await response.json();
+        throw new Error(err.detail || 'Não foi possível atualizar a regra.');
     }
     return await response.json();
 }
 
 /**
- * Exclui uma regra de comissão.
+ * Exclui uma regra.
  * @param {number} ruleId - O ID da regra.
  */
 export async function deleteRuleAPI(ruleId) {

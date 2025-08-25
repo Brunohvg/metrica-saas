@@ -1,8 +1,8 @@
 // apps/commissions/static/js/rules/utils.js
 
 /**
- * Pega o valor do cookie CSRF necessário para requisições seguras.
- * @returns {string} O token CSRF.
+ * Pega o valor do cookie CSRF.
+ * @returns {string} O token.
  */
 export function getCSRFToken() {
     const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
@@ -10,9 +10,9 @@ export function getCSRFToken() {
 }
 
 /**
- * Exibe um alerta de sucesso usando SweetAlert2.
+ * Exibe um alerta de sucesso.
  * @param {string} message - A mensagem a ser exibida.
- * @param {number} timer - Duração em milissegundos.
+ * @param {number} timer - Duração.
  */
 export function showSuccessAlert(message, timer = 2000) {
     Swal.fire({
@@ -20,14 +20,12 @@ export function showSuccessAlert(message, timer = 2000) {
         title: 'Sucesso!',
         text: message,
         timer: timer,
-        showConfirmButton: false,
-        toast: true,
-        position: 'top-end'
+        showConfirmButton: false
     });
 }
 
 /**
- * Exibe um alerta de erro usando SweetAlert2.
+ * Exibe um alerta de erro.
  * @param {string} message - A mensagem de erro.
  */
 export function showErrorAlert(message) {
@@ -40,8 +38,8 @@ export function showErrorAlert(message) {
 
 /**
  * Exibe um modal de confirmação.
- * @param {object} options - Opções de configuração para o alerta.
- * @returns {Promise} - A promessa do SweetAlert2.
+ * @param {object} options - Opções de configuração.
+ * @returns {Promise}
  */
 export function showConfirmAlert(options = {}) {
     return Swal.fire({

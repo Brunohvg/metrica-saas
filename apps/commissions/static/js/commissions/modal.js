@@ -7,9 +7,6 @@ import { showErrorAlert } from './utils.js';
 
 let createRuleModal, viewRuleModal, editRuleModal, tiersModal;
 
-/**
- * Inicializa todas as instâncias de modais do Bootstrap.
- */
 export function initializeModals() {
     createRuleModal = new bootstrap.Modal(document.getElementById('createRuleModal'));
     viewRuleModal = new bootstrap.Modal(document.getElementById('viewRuleModal'));
@@ -17,10 +14,6 @@ export function initializeModals() {
     tiersModal = new bootstrap.Modal(document.getElementById('tiersModal'));
 }
 
-/**
- * Abre o modal de visualização.
- * @param {number} ruleId - O ID da regra.
- */
 export async function openViewModal(ruleId) {
     try {
         const rule = await fetchRuleById(ruleId);
@@ -31,10 +24,6 @@ export async function openViewModal(ruleId) {
     }
 }
 
-/**
- * Abre o modal de edição.
- * @param {number} ruleId - O ID da regra.
- */
 export async function openEditModal(ruleId) {
     try {
         const rule = await fetchRuleById(ruleId);
@@ -45,14 +34,10 @@ export async function openEditModal(ruleId) {
     }
 }
 
-/**
- * Abre o modal de gerenciamento de faixas.
- * @param {number} ruleId - O ID da regra.
- */
 export async function openTiersModal(ruleId) {
     try {
         const rule = await fetchRuleById(ruleId);
-        setCurrentRuleData(rule); // Guarda os dados da regra atual para salvar depois
+        setCurrentRuleData(rule);
         renderTiersContent(rule.tiers);
         tiersModal.show();
     } catch (error) {
@@ -60,14 +45,11 @@ export async function openTiersModal(ruleId) {
     }
 }
 
-/**
- * Fecha todos os modais relevantes e recarrega a página.
- * Usado como callback após sucesso.
- */
-export function closeModalsAndReload() {
-    createRuleModal.hide();
-    editRuleModal.hide();
-    tiersModal.hide();
-    // Um pequeno delay para dar tempo do modal fechar antes do reload
-    setTimeout(() => location.reload(), 300);
+export function getModalInstance(modalId) {
+    switch(modalId) {
+        case 'createRuleModal': return createRuleModal;
+        case 'editRuleModal': return editRuleModal;
+        case 'tiersModal': return tiersModal;
+        default: return null;
+    }
 }
