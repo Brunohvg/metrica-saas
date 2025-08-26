@@ -10,7 +10,7 @@ urlpatterns = [
     # --- ROTAS DA API (PREFIXO /api/v1/) ---
     path('api/v1/', include('apps.accounts.api.urls')),
     path('api/v1/commissions/', include('apps.commissions.api.urls')),
-    #path('api/v1/', include('apps.sales.api.urls')),
+    path('api/v1/', include('apps.sales.api.urls')),
 
     # --- ROTAS DO FRONTEND ---
     path('', include('apps.dashboard.urls')), # Dashboard é a página inicial
