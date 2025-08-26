@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     # Apps de terceiros
     'widget_tweaks',
     'rest_framework',
+    'django.contrib.humanize',
 
     # Apps do Django
     'django.contrib.admin',

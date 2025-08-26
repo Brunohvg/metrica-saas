@@ -1,0 +1,103 @@
+/* só CSS, nada de tags Django */
+.action-btn {
+    width: 30px;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #6B7280;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+    padding: 1rem 1.5rem;
+    background-color: #F9FAFB;
+}
+
+.table td {
+    vertical-align: middle;
+    font-size: 0.875rem;
+    padding: 1rem 1.5rem;
+}
+
+.table tbody tr:hover {
+    background-color: #F8F9FA;
+}
+
+.filter-section {
+    background: #F8F9FA;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.form-control,
+.form-select {
+    border: 1px solid #D1D5DB;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #7FB6F0;
+    box-shadow: 0 0 0 3px rgba(127, 182, 240, 0.25);
+}
+
+.badge-sale-type {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.badge-in_store { background-color: #F0FDF4; color: #166534; }
+.badge-product { background-color: #FEF3C7; color: #92400E; }
+.badge-service { background-color: #E0F2FE; color: #0369A1; }
+
+.pagination .page-link {
+    border-radius: 8px;
+    color: #3B82F6;
+    border-color: #D1D5DB;
+}
+.pagination .page-item.active .page-link {
+    background-color: #7FB6F0;
+    border-color: #7FB6F0;
+    color: white;
+}
+.pagination .page-link:hover {
+    background-color: #EFF6FF;
+}
+.pagination .page-item.disabled .page-link {
+    background-color: #F8F9FA;
+}
+
+.seller-info {
+    display: flex;
+    align-items: center;
+}
+
+.seller-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: white;
+    font-size: 0.875rem;
+    margin-right: 0.75rem;
+}

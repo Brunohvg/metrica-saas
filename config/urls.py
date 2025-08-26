@@ -16,7 +16,7 @@ urlpatterns = [
     path('', include('apps.dashboard.urls')), # Dashboard é a página inicial
     path('contas/', include('apps.accounts.urls')),
     path('comissoes/', include('apps.commissions.urls')),
-    #path('vendas/', include('apps.sales.urls')),
+    path('vendas/', include('apps.sales.urls')),
 ]
 
 # Adicionado para servir arquivos de mídia (fotos de perfil) em ambiente de desenvolvimento
