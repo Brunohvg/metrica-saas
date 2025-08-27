@@ -26,7 +26,7 @@ class DailySale(BaseModel):
     description = models.TextField(blank=True, null=True, verbose_name="Descrição", help_text="Observações adicionais sobre a venda.")
 
     def __str__(self):
-        return f"Venda de '{self.item_sold}' por {self.seller.username} em {self.date}"
+        return f"Venda de '{self.summary_description}' por {self.seller.username} em {self.date}"
 
     class Meta:
         verbose_name = "Venda Diária"

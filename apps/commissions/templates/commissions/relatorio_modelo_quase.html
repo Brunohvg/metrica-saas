@@ -1,0 +1,340 @@
+{% extends "base/base_dashboard.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Relatórios de Comissão{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/commissions.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    /* Estilos gerais */
+    .card {
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .card-header-styled {
+        background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%);
+        color: #0F172A;
+        border-radius: 16px 16px 0 0;
+        padding: 1.5rem 2rem;
+    }
+    .card-title-styled {
+        color: #0F172A;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+
+    /* Formulário de filtro */
+    .filter-section {
+        background: #F8F9FA;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+    .form-control, .form-select {
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #7FB6F0;
+        box-shadow: 0 0 0 3px rgba(127, 182, 240, 0.25);
+    }
+
+    /* Cards de resumo */
+    .summary-card .card-body {
+        transition: all 0.3s ease;
+        padding: 1.5rem;
+    }
+    .summary-card:hover .card-body {
+        transform: translateY(-2px);
+    }
+    .summary-card-1 { background: linear-gradient(135deg, #E0F2FE 0%, #BFD8FF 100%); color: #075985; }
+    .summary-card-2 { background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); color: #047857; }
+    .summary-card-3 { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); color: #92400E; }
+    .summary-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+    }
+
+    /* Tabela de relatórios */
+    .table thead th {
+        font-weight: 600;
+        color: #6B7280;
+        font-size: 0.875rem;
+    }
+    .table tbody tr:hover {
+        background-color: #F8F9FA;
+    }
+    .table tbody td {
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+
+    /* Badges de status */
+    .badge-styled {
+        padding: 0.4em 0.8em;
+        font-size: 0.75em;
+        font-weight: 700;
+        border-radius: 12px;
+        letter-spacing: 0.5px;
+    }
+    .badge-pending { background-color: #FEF3C7; color: #92400E; }
+    .badge-approved { background-color: #DBEAFE; color: #1E40AF; }
+    .badge-paid { background-color: #D1FAE5; color: #065F46; }
+
+    /* Ações na tabela */
+    .action-btn {
+        width: 30px;
+        height: 30px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .action-btn-approve { background-color: #ECFDF5; color: #047857; }
+    .action-btn-pay { background-color: #E0F2FE; color: #0C4A6E; }
+    .action-btn-detail { background-color: #F8FAFC; color: #6B7280; }
+
+    /* Barra de ações em massa */
+    #bulk-actions-bar {
+        background-color: #EBF4FF;
+        border: 1px solid #C3DAFE;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: none;
+        animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header border-0 d-flex justify-content-between align-items-center card-header-styled">
+            <h5 class="mb-0 fw-semibold card-title-styled">
+                <i class="ti ti-bar-chart-line me-2"></i>Relatórios de Comissão
+            </h5>
+            <button class="btn btn-light btn-sm px-3 py-2" style="border-radius:8px; font-weight:600; color:#0F172A; border:1px solid rgba(15,23,42,.08);">
+                <i class="ti ti-file-text me-1"></i>Gerar PDF
+            </button>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end filter-section">
+                <div class="col-md-3">
+                    <label class="form-label fw-medium mb-1">Ano</label>
+                    <select name="period_year" class="form-select form-select-sm">
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-medium mb-1">Mês</label>
+                    <select name="period_month" class="form-select form-select-sm">
+                        {% for num, month in months %}
+                            <option value="{{ num }}" {% if num == selected_month %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-medium mb-1">Status</label>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="PENDING" {% if request.GET.status == "PENDING" %}selected{% endif %}>Pendente</option>
+                        <option value="APPROVED" {% if request.GET.status == "APPROVED" %}selected{% endif %}>Aprovado</option>
+                        <option value="PAID" {% if request.GET.status == "PAID" %}selected{% endif %}>Pago</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button type="submit" class="btn" style="background-color:#7FB6F0; color:#0F172A; font-weight:600; border-radius:10px;">
+                        <i class="ti ti-filter me-1"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm summary-card">
+                <div class="card-body text-center summary-card-1">
+                    <h6 class="fw-medium mb-0">Vendas Totais</h6>
+                    <h4 class="summary-value">R$ {{ total_sales|floatformat:2|intcomma }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm summary-card">
+                <div class="card-body text-center summary-card-2">
+                    <h6 class="fw-medium mb-0">Comissões Calculadas</h6>
+                    <h4 class="summary-value">R$ {{ total_commissions|floatformat:2|intcomma }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border-0 shadow-sm summary-card">
+                <div class="card-body text-center summary-card-3">
+                    <h6 class="fw-medium mb-0">Relatórios</h6>
+                    <h4 class="summary-value">{{ reports.count }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bulk-actions-bar" class="d-flex justify-content-between align-items-center">
+        <span id="selected-count" class="fw-medium text-muted">0 relatórios selecionados</span>
+        <div>
+            <button id="btn-approve-bulk" class="btn btn-success btn-sm me-2" disabled>
+                <i class="ti ti-check me-1"></i>Aprovar Selecionados
+            </button>
+            <button id="btn-pay-bulk" class="btn btn-dark btn-sm" disabled>
+                <i class="ti ti-cash me-1"></i>Pagar Selecionados
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th><input type="checkbox" id="select_all"></th>
+                            <th>Vendedor</th>
+                            <th>Mês/Ano</th>
+                            <th>Vendas Totais</th>
+                            <th>Comissão</th>
+                            <th>Regra</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                            <tr>
+                                <td><input type="checkbox" class="select-report" value="{{ report.id }}" data-status="{{ report.status }}"></td>
+                                <td>{{ report.seller.get_full_name|default:report.seller.username }}</td>
+                                <td>{{ report.period_month }}/{{ report.period_year }}</td>
+                                <td>R$ {{ report.total_sales|floatformat:2|intcomma }}</td>
+                                <td class="fw-bold text-success">R$ {{ report.calculated_commission|floatformat:2|intcomma }}</td>
+                                <td>{{ report.commission_rule_applied.name|default:"-" }}</td>
+                                <td>
+                                    <span class="badge badge-styled badge-{{ report.status|lower }}">
+                                        {{ report.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    <a href="#" class="action-btn action-btn-detail" title="Detalhes">
+                                        <i class="ti ti-eye"></i>
+                                    </a>
+                                    {% if report.status == "PENDING" %}
+                                        <button type="button" class="action-btn action-btn-approve" onclick="approveReport({{ report.id }})" title="Aprovar">
+                                            <i class="ti ti-check"></i>
+                                        </button>
+                                    {% elif report.status == "APPROVED" %}
+                                        <button type="button" class="action-btn action-btn-pay" onclick="payReport({{ report.id }})" title="Pagar">
+                                            <i class="ti ti-cash"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">Nenhum relatório encontrado.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAllCheckbox = document.getElementById('select_all');
+        const reportCheckboxes = document.querySelectorAll('.select-report');
+        const bulkActionsBar = document.getElementById('bulk-actions-bar');
+        const selectedCount = document.getElementById('selected-count');
+        const btnApproveBulk = document.getElementById('btn-approve-bulk');
+        const btnPayBulk = document.getElementById('btn-pay-bulk');
+
+        function updateBulkActions() {
+            const selectedReports = Array.from(reportCheckboxes).filter(cb => cb.checked);
+            const count = selectedReports.length;
+            
+            selectedCount.textContent = `${count} relatório${count !== 1 ? 's' : ''} selecionado${count !== 1 ? 's' : ''}`;
+            
+            if (count > 0) {
+                bulkActionsBar.style.display = 'flex';
+                const canApprove = selectedReports.every(cb => cb.dataset.status === 'PENDING');
+                const canPay = selectedReports.every(cb => cb.dataset.status === 'APPROVED');
+                
+                btnApproveBulk.disabled = !canApprove;
+                btnPayBulk.disabled = !canPay;
+
+                // Tooltips para os botões de ação em massa
+                btnApproveBulk.title = canApprove ? 'Aprovar relatórios pendentes selecionados' : 'Aprovar: Apenas relatórios pendentes podem ser aprovados';
+                btnPayBulk.title = canPay ? 'Pagar: Apenas relatórios aprovados podem ser pagos' : 'Pagar: Apenas relatórios aprovados podem ser pagos';
+
+            } else {
+                bulkActionsBar.style.display = 'none';
+            }
+        }
+
+        selectAllCheckbox.addEventListener('change', function(e) {
+            reportCheckboxes.forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            updateBulkActions();
+        });
+
+        reportCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateBulkActions);
+        });
+
+        // Funções para ações em massa
+        btnApproveBulk.addEventListener('click', function() {
+            const selectedReports = Array.from(reportCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            // Lógica para aprovar relatórios
+            console.log("Aprovar relatórios:", selectedReports);
+            // Implemente aqui a chamada AJAX para o seu endpoint de aprovação em massa
+            Swal.fire('Aprovar Selecionados', 'Funcionalidade em desenvolvimento.', 'info');
+        });
+
+        btnPayBulk.addEventListener('click', function() {
+            const selectedReports = Array.from(reportCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+            // Lógica para pagar relatórios
+            console.log("Pagar relatórios:", selectedReports);
+            // Implemente aqui a chamada AJAX para o seu endpoint de pagamento em massa
+            Swal.fire('Pagar Selecionados', 'Funcionalidade em desenvolvimento.', 'info');
+        });
+        
+        // Exemplo de funções para ações individuais (se necessário, implemente o AJAX)
+        window.approveReport = function(reportId) {
+            Swal.fire('Aprovar', `Aprovar relatório ID: ${reportId}`, 'info');
+        }
+        
+        window.payReport = function(reportId) {
+            Swal.fire('Pagar', `Pagar relatório ID: ${reportId}`, 'info');
+        }
+    });
+</script>
+{% endblock %}

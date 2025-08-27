@@ -1,0 +1,311 @@
+{% extends "base/base_dashboard.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Vendas Diárias{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/sales.css' %}">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    /* Estilos gerais */
+    body {
+        background-color: #F8F9FA;
+    }
+    .card {
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .card-header-styled {
+        background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%);
+        color: #0F172A;
+        border-radius: 16px 16px 0 0;
+        padding: 1.5rem 2rem;
+    }
+    .card-title-styled {
+        color: #0F172A;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+    }
+
+    /* Formulário de filtro aprimorado */
+    .filter-section {
+        background: #F8F9FA;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #E5E7EB;
+    }
+    .form-control, .form-select {
+        border: 1px solid #D1D5DB;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #7FB6F0;
+        box-shadow: 0 0 0 3px rgba(127, 182, 240, 0.25);
+    }
+    .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .filter-buttons .btn {
+        flex: 1;
+        font-weight: 600;
+        border-radius: 10px;
+    }
+    .filter-buttons .btn-filter {
+        background-color: #7FB6F0;
+        color: #0F172A;
+    }
+    .filter-buttons .btn-clear {
+        color: #6B7280;
+        border-color: #D1D5DB;
+    }
+    
+    /* Tabela */
+    .table thead th {
+        font-weight: 600;
+        color: #6B7280;
+        font-size: 0.875rem;
+    }
+    .table tbody tr:hover {
+        background-color: #F8F9FA;
+    }
+    .table tbody td {
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+    
+    /* Badges */
+    .badge-sale-type {
+        padding: 0.4em 0.8em;
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 12px;
+        letter-spacing: 0.5px;
+    }
+    .badge-in_store { background-color: #ECFDF5; color: #047857; }
+    .badge-product { background-color: #FEF3C7; color: #92400E; }
+    .badge-service { background-color: #E0F2FE; color: #0C4A6E; }
+
+    /* Ações na tabela */
+    .action-btn {
+        width: 30px;
+        height: 30px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .action-btn-edit { background-color: #FEF3C7; color: #92400E; }
+    .action-btn-delete { background-color: #FEF2F2; color: #B91C1C; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+        <div class="card-header border-0 d-flex justify-content-between align-items-center"
+             style="background: linear-gradient(135deg, #7FB6F0 0%, #BFD8FF 100%); color: #0F172A; border-radius: 16px 16px 0 0; padding: 1.5rem 2rem;">
+            <h5 class="card-title mb-0 fw-semibold" style="color:#0F172A;">
+                <i class="ti ti-receipt-2 me-2"></i>Gerenciar Lançamentos de Vendas
+            </h5>
+            <div class="d-flex gap-2">
+                <form id="pdfForm" method="post" action="#">
+                    {% csrf_token %}
+                    <input type="hidden" name="selected_sales" id="selectedSalesInput">
+                    <button type="submit" class="btn btn-light btn-sm px-3 py-2"
+                        style="border-radius: 8px; font-weight: 600; color:#0F172A; border:1px solid rgba(15,23,42,.08);">
+                        <i class="ti ti-file-text me-1"></i>Gerar PDF
+                    </button>
+                </form>
+                <button class="btn btn-light btn-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#createSaleModal"
+                    style="border-radius: 8px; font-weight: 600; color:#0F172A; border:1px solid rgba(15,23,42,.08);">
+                    <i class="ti ti-plus me-1"></i>Registrar Venda
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="filter-section">
+                <form method="get" action="">
+                    <div class="row align-items-end g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <label class="form-label fw-medium mb-2">Filtrar por Vendedor:</label>
+                            <select class="form-select" name="seller">
+                                <option value="">Todos os Vendedores</option>
+                                {% for seller in sellers %}
+                                    <option value="{{ seller.id }}" {% if request.GET.seller == seller.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ seller.get_full_name|default:seller.username }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label fw-medium mb-2">Data Inicial:</label>
+                            <input type="date" class="form-control" name="start_date" value="{{ request.GET.start_date }}">
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label fw-medium mb-2">Data Final:</label>
+                            <input type="date" class="form-control" name="end_date" value="{{ request.GET.end_date }}">
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="filter-buttons">
+                                <button type="submit" class="btn btn-filter">
+                                    <i class="ti ti-filter"></i>
+                                </button>
+                                <a href="{% url 'sales:daily-sale-list' %}" class="btn btn-outline-secondary btn-clear">
+                                    <i class="ti ti-rotate-2"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <form id="salesSelectionForm">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">
+                                    <input type="checkbox" id="selectAll">
+                                </th>
+                                <th scope="col">Data</th>
+                                <th scope="col">Vendedor</th>
+                                <th scope="col">Descrição</th>
+                                <th scope="col" class="text-end">Valor Total</th>
+                                <th scope="col" class="text-center">Tipo</th>
+                                <th scope="col" class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in page_obj %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="sale-checkbox" value="{{ sale.id }}">
+                                    </td>
+                                    <td>{{ sale.date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="seller-info d-flex align-items-center">
+                                            <div class="seller-avatar me-2" style="background-color: #BFD8FF; color: #0F172A; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:0.875rem;">
+                                                {{ sale.seller.first_name.0|default:sale.seller.username.0|upper }}{{ sale.seller.last_name.0|default:''|upper }}
+                                            </div>
+                                            <span>{{ sale.seller.first_name|default:sale.seller.username }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold">{{ sale.summary_description }}</span>
+                                        <small class="d-block text-muted">{{ sale.description|truncatechars:40 }}</small>
+                                    </td>
+                                    <td class="text-end fw-semibold">R$ {{ sale.total_value|intcomma }}</td>
+                                    <td class="text-center">
+                                        <span class="badge-sale-type badge-{{ sale.sale_type|lower }}">
+                                            {{ sale.get_sale_type_display }}
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="action-btn" title="Editar" style="background-color: #FEF3C7; color: #92400E;" data-bs-toggle="modal" data-bs-target="#editSaleModal-{{ sale.id }}">
+                                            <i class="ti ti-edit" style="font-size: 0.875rem;"></i>
+                                        </button>
+                                        <button class="action-btn" title="Excluir" style="background-color: #FEE2E2; color: #DC2626;" data-bs-toggle="modal" data-bs-target="#deleteSaleModal-{{ sale.id }}">
+                                            <i class="ti ti-trash" style="font-size: 0.875rem;"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center p-5">
+                                        <i class="ti ti-receipt-off display-4 mb-3" style="color: #D1D5DB;"></i>
+                                        <h6 style="color: #6B7280; font-weight: 600;">Nenhum lançamento encontrado</h6>
+                                        <p style="color: #9CA3AF; font-size: 0.875rem;">Use os filtros acima ou registre uma nova venda.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+            <div class="d-flex justify-content-center mt-4">
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination">
+                            {% with current_page=page_obj.number|stringformat:"s" %}
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ request.GET.urlencode|cut:'page='|cut:current_page }}">
+                                            &laquo;
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                {% endif %}
+
+                                {% for i in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == i %}
+                                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                                    {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ i }}{{ request.GET.urlencode|cut:'page='|cut:current_page }}">{{ i }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ request.GET.urlencode|cut:'page='|cut:current_page }}">
+                                            &raquo;
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                {% endif %}
+                            {% endwith %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createSaleModal" ...></div>
+
+{% for sale in page_obj %}
+    <div class="modal fade" id="editSaleModal-{{ sale.id }}" ...></div>
+    <div class="modal fade" id="deleteSaleModal-{{ sale.id }}" ...></div>
+{% endfor %}
+
+<script>
+    // Selecionar/Deselecionar todos
+    document.getElementById('selectAll').addEventListener('change', function () {
+        const checkboxes = document.querySelectorAll('.sale-checkbox');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // Antes de enviar o form PDF, pegar IDs selecionados
+    document.getElementById('pdfForm').addEventListener('submit', function (e) {
+        const selected = Array.from(document.querySelectorAll('.sale-checkbox:checked')).map(cb => cb.value);
+        if (selected.length === 0) {
+            e.preventDefault();
+            Swal.fire('Atenção', 'Selecione pelo menos uma venda para gerar o PDF.', 'warning');
+        } else {
+            document.getElementById('selectedSalesInput').value = selected.join(',');
+        }
+    });
+</script>
+{% endblock %}

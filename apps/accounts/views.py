@@ -2,7 +2,10 @@ from django.contrib.auth.views import LoginView, LogoutView
 from .forms import LoginForm
 from django.urls import reverse_lazy
 from django.contrib import messages
-
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import user_passes_test
+from .utils import is_gestor
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
@@ -28,9 +31,6 @@ class CustomLogoutView(LogoutView):
 
 # views.py - Adicione esta view ao seu arquivo de views existente
 
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import user_passes_test
 
 def is_gestor(user):
     """Verifica se o usuário é um gestor"""

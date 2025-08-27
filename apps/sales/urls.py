@@ -5,4 +5,5 @@ app_name = 'sales'
 
 urlpatterns = [
     path('', views.DailySaleListView.as_view(), name='daily-sale-list'),
+    
 ]
